@@ -42,8 +42,6 @@ public class DriveSubsystem extends SubsystemBase {
     private WPI_VictorSPX leftSlave, rightSlave;
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
-    private double leftFeedforward;
-    private double rightFeedforward;
 
     // Odometry class for tracking robot pose
     private final DifferentialDriveOdometry m_odometry;
@@ -52,6 +50,9 @@ public class DriveSubsystem extends SubsystemBase {
     // Pigeon Specific
     private PigeonIMU pigeon;
     private PigeonIMU.FusionStatus fusionStatus;
+
+    // DriveBase2020 is a singleton class as it represents a physical subsystem
+    private static DriveSubsystem currentInstance;
 
     /**
      * Creates a new DriveSubsystem.
@@ -100,6 +101,20 @@ public class DriveSubsystem extends SubsystemBase {
     public void followMotors() {
         leftSlave.follow(leftMaster);
         rightSlave.follow(rightMaster);
+    }
+
+    /**
+     * Initialize the current DriveBase instance
+     */
+    public static void init() {
+        if (currentInstance == null) {
+            currentInstance = new DriveSubsystem();
+        }
+    }
+
+    public static DriveSubsystem getInstance() {
+        init();
+        return currentInstance;
     }
 
     @Override
@@ -180,18 +195,6 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Set the feedforward values to be used by tankDriveVelocities
-     * 
-     * @param setLeftFeedforward set left feedforward
-     * @param setRightFeedforward set right feedforward
-     */
-    public void setFeedForwards(double setLeftFeedforward, double setRightFeedforward) {
-        leftFeedforward = setLeftFeedforward;
-        rightFeedforward = setRightFeedforward;
-    }
-
-
-    /**
      * Controls the left and right sides of the drive directly with velocities.
      *
      * REQUIRED FOR RAMSETE COMMAND
@@ -199,7 +202,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @param leftVolts the commanded left output
      * @param rightVolts the commanded right output
      */
-    public void tankDriveVelocities(double leftVelocity, double rightVelocity) {
+    public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
         leftMaster.set(ControlMode.Velocity, leftVelocity, DemandType.ArbitraryFeedForward,
                 leftFeedforward / 12.0);
         rightMaster.set(ControlMode.Velocity, -rightVelocity, DemandType.ArbitraryFeedForward,

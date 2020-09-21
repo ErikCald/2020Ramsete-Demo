@@ -100,18 +100,10 @@ public class RobotContainer {
                 // Pass config
                 config);
 
-        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(exampleTrajectory, m_robotDrive::getPose,
-                new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta), Constants.kDriveKinematics,
-                // RamseteCommand passes velocitires to the callback
-                m_robotDrive::tankDriveVelocities, m_robotDrive);
+        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(exampleTrajectory);
 
         // Run path following command, then stop at the end.
-        return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVelocities(0, 0));
-        /**
-         * new SimpleMotorFeedforward(DriveConstants.ksVolts,
-         * DriveConstants.kvVoltSecondsPerMeter,
-         * DriveConstants.kaVoltSecondsSquaredPerMeter),
-         */
+        return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
 
     }
 
