@@ -184,26 +184,10 @@ public class RamseteCommandMerge extends CommandBase {
     double leftOutput;
     double rightOutput;
 
-    if (m_usePID) {
-      double leftFeedforward =
-          m_feedforward.calculate(leftSpeedSetpoint,
-              (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
 
-      double rightFeedforward =
-          m_feedforward.calculate(rightSpeedSetpoint,
-              (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
-
-      leftOutput = leftFeedforward
-          + m_leftController.calculate(m_speeds.get().leftMetersPerSecond,
-          leftSpeedSetpoint);
-
-      rightOutput = rightFeedforward
-          + m_rightController.calculate(m_speeds.get().rightMetersPerSecond,
-          rightSpeedSetpoint);
-    } else {
-      leftOutput = leftSpeedSetpoint;
-      rightOutput = rightSpeedSetpoint;
-    }
+    leftOutput = leftSpeedSetpoint;
+    rightOutput = rightSpeedSetpoint;
+    
 
     // ADDED IN TO RUN FEEDFORWARDS FOR TALONS
     double leftFeedforward =
