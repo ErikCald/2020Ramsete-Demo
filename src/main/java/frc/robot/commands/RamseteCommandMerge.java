@@ -46,46 +46,46 @@ import frc.robot.Constants;
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class RamseteCommandMerge extends CommandBase {
-  private final Timer m_timer = new Timer();
-  private final boolean m_usePID;
-  private final Trajectory m_trajectory;
-  private final Supplier<Pose2d> m_pose;
-  private final RamseteController m_follower;
-  private final SimpleMotorFeedforward m_feedforward;
-  private final DifferentialDriveKinematics m_kinematics;
-  private final Supplier<DifferentialDriveWheelSpeeds> m_speeds;
-  private final PIDController m_leftController;
-  private final PIDController m_rightController;
-  private final BiConsumer<Double, Double> m_output;
-  private DifferentialDriveWheelSpeeds m_prevSpeeds;
-  private double m_prevTime;
+    private final Timer m_timer = new Timer();
+    private final boolean m_usePID;
+    private final Trajectory m_trajectory;
+    private final Supplier<Pose2d> m_pose;
+    private final RamseteController m_follower;
+    private final SimpleMotorFeedforward m_feedforward;
+    private final DifferentialDriveKinematics m_kinematics;
+    private final Supplier<DifferentialDriveWheelSpeeds> m_speeds;
+    private final PIDController m_leftController;
+    private final PIDController m_rightController;
+    private final BiConsumer<Double, Double> m_output;
+    private DifferentialDriveWheelSpeeds m_prevSpeeds;
+    private double m_prevTime;
 
-  // ADDED IN
-  private final DriveSubsystem driveSubsystem;
+    // ADDED IN
+    private final DriveSubsystem driveSubsystem;
 
-  /**
-   * Constructs a new RamseteCommand that, when executed, will follow the provided trajectory.
-   * PID control and feedforward are handled internally, and outputs are scaled -12 to 12
-   * representing units of volts.
-   *
-   * <p>Note: The controller will *not* set the outputVolts to zero upon completion of the path -
-   * this
-   * is left to the user, since it is not appropriate for paths with nonstationary endstates.
-   *
-   * @param trajectory      The trajectory to follow.
-   * @param pose            A function that supplies the robot pose - use one of
-   *                        the odometry classes to provide this.
-   * @param controller      The RAMSETE controller used to follow the trajectory.
-   * @param feedforward     The feedforward to use for the drive.
-   * @param kinematics      The kinematics for the robot drivetrain.
-   * @param wheelSpeeds     A function that supplies the speeds of the left and
-   *                        right sides of the robot drive.
-   * @param leftController  The PIDController for the left side of the robot drive.
-   * @param rightController The PIDController for the right side of the robot drive.
-   * @param outputVolts     A function that consumes the computed left and right
-   *                        outputs (in volts) for the robot drive.
-   * @param requirements    The subsystems to require.
-   */
+    /**
+     * Constructs a new RamseteCommand that, when executed, will follow the provided trajectory.
+     * PID control and feedforward are handled internally, and outputs are scaled -12 to 12
+     * representing units of volts.
+     *
+     * <p>Note: The controller will *not* set the outputVolts to zero upon completion of the path -
+     * this
+     * is left to the user, since it is not appropriate for paths with nonstationary endstates.
+     *
+     * @param trajectory            The trajectory to follow.
+     * @param pose                A function that supplies the robot pose - use one of
+     *                        the odometry classes to provide this.
+     * @param controller      The RAMSETE controller used to follow the trajectory.
+     * @param feedforward     The feedforward to use for the drive.
+     * @param kinematics      The kinematics for the robot drivetrain.
+     * @param wheelSpeeds     A function that supplies the speeds of the left and
+     *                        right sides of the robot drive.
+     * @param leftController  The PIDController for the left side of the robot drive.
+     * @param rightController The PIDController for the right side of the robot drive.
+     * @param outputVolts     A function that consumes the computed left and right
+     *                        outputs (in volts) for the robot drive.
+     * @param requirements    The subsystems to require.
+     */
   // @SuppressWarnings("PMD.ExcessiveParameterList")
   // public RamseteCommandMerge(Trajectory trajectory,
   //                       Supplier<Pose2d> pose,
@@ -127,92 +127,108 @@ public class RamseteCommandMerge extends CommandBase {
    *                              wheel speeds.
    * @param requirements          The subsystems to require.
    */
-  public RamseteCommandMerge(Trajectory trajectory,
+   public RamseteCommandMerge(Trajectory trajectory,
                         Supplier<Pose2d> pose,
                         RamseteController follower,
                         DifferentialDriveKinematics kinematics,
                         BiConsumer<Double, Double> outputMetersPerSecond,
                         DriveSubsystem subsystem) {
-    m_trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
-    m_pose = requireNonNullParam(pose, "pose", "RamseteCommand");
-    m_follower = requireNonNullParam(follower, "follower", "RamseteCommand");
-    m_kinematics = requireNonNullParam(kinematics, "kinematics", "RamseteCommand");
-    m_output = requireNonNullParam(outputMetersPerSecond, "output", "RamseteCommand");
+        m_trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
+        m_pose = requireNonNullParam(pose, "pose", "RamseteCommand");
+        m_follower = requireNonNullParam(follower, "follower", "RamseteCommand");
+        m_kinematics = requireNonNullParam(kinematics, "kinematics", "RamseteCommand");
+        m_output = requireNonNullParam(outputMetersPerSecond, "output", "RamseteCommand");
 
-    // Changed feedforward to look in constants file
-    m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter, Constants.kaVoltSecondsSquaredPerMeter);;
-    m_speeds = null;
-    m_leftController = null;
-    m_rightController = null;
+        // Changed feedforward to look in constants file
+        m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter, Constants.kaVoltSecondsSquaredPerMeter);;
+        m_speeds = null;
+        m_leftController = null;
+        m_rightController = null;
 
-    m_usePID = false;
+        m_usePID = false;
 
-    // ADDED IN
-    driveSubsystem = subsystem;
+        // ADDED IN
+        driveSubsystem = subsystem;
 
-    addRequirements(subsystem);
-  }
-
-  @Override
-  public void initialize() {
-    m_prevTime = 0;
-    var initialState = m_trajectory.sample(0);
-    m_prevSpeeds = m_kinematics.toWheelSpeeds(
-        new ChassisSpeeds(initialState.velocityMetersPerSecond,
-            0,
-            initialState.curvatureRadPerMeter
-                * initialState.velocityMetersPerSecond));
-    m_timer.reset();
-    m_timer.start();
-    if (m_usePID) {
-      m_leftController.reset();
-      m_rightController.reset();
+        addRequirements(subsystem);
     }
-  }
 
-  @Override
-  public void execute() {
-    double curTime = m_timer.get();
-    double dt = curTime - m_prevTime;
+    @Override
+    public void initialize() {
+        m_prevTime = 0;
+        var initialState = m_trajectory.sample(0);
+        m_prevSpeeds = m_kinematics.toWheelSpeeds(
+                new ChassisSpeeds(initialState.velocityMetersPerSecond,
+                        0,
+                        initialState.curvatureRadPerMeter
+                                * initialState.velocityMetersPerSecond));
+        m_timer.reset();
+        m_timer.start();
+        if (m_usePID) {
+            m_leftController.reset();
+            m_rightController.reset();
+        }
+    }
 
-    var targetWheelSpeeds = m_kinematics.toWheelSpeeds(
-        m_follower.calculate(m_pose.get(), m_trajectory.sample(curTime)));
+    @Override
+    public void execute() {
+        double curTime = m_timer.get();
+        double dt = curTime - m_prevTime;
 
-    var leftSpeedSetpoint = targetWheelSpeeds.leftMetersPerSecond;
-    var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
+        var targetWheelSpeeds = m_kinematics.toWheelSpeeds(
+                m_follower.calculate(m_pose.get(), m_trajectory.sample(curTime)));
 
-    double leftOutput;
-    double rightOutput;
+        var leftSpeedSetpoint = targetWheelSpeeds.leftMetersPerSecond;
+        var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
+
+        double leftOutput;
+        double rightOutput;
+
+        if (m_usePID) {
+            double leftFeedforward =
+                    m_feedforward.calculate(leftSpeedSetpoint,
+                            (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
+
+            double rightFeedforward =
+                    m_feedforward.calculate(rightSpeedSetpoint,
+                            (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
+
+            leftOutput = leftFeedforward
+                    + m_leftController.calculate(m_speeds.get().leftMetersPerSecond,
+                    leftSpeedSetpoint);
+
+            rightOutput = rightFeedforward
+                    + m_rightController.calculate(m_speeds.get().rightMetersPerSecond,
+                    rightSpeedSetpoint);
+        } else {
+            leftOutput = leftSpeedSetpoint;
+            rightOutput = rightSpeedSetpoint;
+        }
+
+        // ADDED IN TO RUN FEEDFORWARDS FOR TALONS
+        double leftFeedforward =
+                    m_feedforward.calculate(leftSpeedSetpoint,
+                            (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
+            double rightFeedforward =
+                    m_feedforward.calculate(rightSpeedSetpoint,
+                            (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
+        driveSubsystem.setFeedForwards(leftFeedforward, rightFeedforward);
 
 
-    leftOutput = leftSpeedSetpoint;
-    rightOutput = rightSpeedSetpoint;
-    
 
-    // ADDED IN TO RUN FEEDFORWARDS FOR TALONS
-    double leftFeedforward =
-          m_feedforward.calculate(leftSpeedSetpoint,
-              (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
-      double rightFeedforward =
-          m_feedforward.calculate(rightSpeedSetpoint,
-              (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
-    driveSubsystem.setFeedForwards(leftFeedforward, rightFeedforward);
+        m_output.accept(leftOutput, rightOutput);
 
+        m_prevTime = curTime;
+        m_prevSpeeds = targetWheelSpeeds;
+    }
 
+    @Override
+    public void end(boolean interrupted) {
+        m_timer.stop();
+    }
 
-    m_output.accept(leftOutput, rightOutput);
-
-    m_prevTime = curTime;
-    m_prevSpeeds = targetWheelSpeeds;
-  }
-
-  @Override
-  public void end(boolean interrupted) {
-    m_timer.stop();
-  }
-
-  @Override
-  public boolean isFinished() {
-    return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds());
-  }
+    @Override
+    public boolean isFinished() {
+        return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds());
+    }
 }
