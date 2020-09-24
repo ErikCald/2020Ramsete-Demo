@@ -22,11 +22,11 @@ public class Constants {
     /**
      * Drivetrain Constants
      */
-    public static int RIGHT_FRONT_MOTOR = 2;    //robotSpecific(2, 2, 3, 2, 2);     // I think the id of this years robot is 4, robotSpecific is just an array and returns value of robotID
+    public static int RIGHT_FRONT_MOTOR = 2;    //robotSpecific(2, 2, 3, 2, 2);      // Mergio is id 2, Mergonaut is id 3
     public static int RIGHT_REAR_MOTOR = 4;    //robotSpecific(4, 4, 4, 4, 4);
-    public static int LEFT_FRONT_MOTOR = 1;    //robotSpecific(1, 1, 1, 1, 1);
+    public static int LEFT_FRONT_MOTOR = 1;    //robotSpecific(1, 1, 1, 1, 1);  // I assume the id of this years robot is 4, robotSpecific is just an array and returns value of robotID
     public static int LEFT_REAR_MOTOR = 3;    //robotSpecific(3, 3, 2, 3, 3);
-    public static int CLIMBER_TALON = 5;
+    public static int CLIMBER_TALON = 10;      //robotSpecific(10, 10, -1, -1, 16);
     public static int PIGEON_ID = CLIMBER_TALON;  //robotSpecific(CLIMBER_TALON, CLIMBER_TALON, RIGHT_REAR_MOTOR, LEFT_FRONT_MOTOR, LEFT_REAR_MOTOR, TALON_5_PLYBOY);
 
     // Timeouts for sending CAN bus commands
@@ -36,10 +36,15 @@ public class Constants {
     public static final double LEFT_DRIVE_PID_F = 0.0;
     public static final double LEFT_DRIVE_PID_P = 0.018d;
     public static final double LEFT_DRIVE_PID_D = 0.0016d;
+    public static final double LEFT_DRIVE_NOMIAL = 0.0;
+    public static final double LEFT_DRIVE_PEAK = 1.0;
 
     public static final double RIGHT_DRIVE_PID_F = 0.0;
     public static final double RIGHT_DRIVE_PID_P = 0.018d;
     public static final double RIGHT_DRIVE_PID_D = 0.0016d;
+    public static final double RIGHT_DRIVE_NOMIAL = 0.0;
+    public static final double RIGHT_DRIVE_PEAK = 1.0;
+
 
     public static final double kTrackwidthMeters = 0.69;
     public static final DifferentialDriveKinematics kDriveKinematics =

@@ -100,6 +100,15 @@ public class RobotContainer {
                 // Pass config
                 config);
 
+        Trajectory driveForwardTrajectory = TrajectoryGenerator.generateTrajectory(
+                // Start at the origin facing the +X direction
+                new Pose2d(0, 0, new Rotation2d(0)),
+
+                // End 1 meters straight ahead of where we started, facing forward
+                new Pose2d(1, 0, new Rotation2d(0)),
+                // Pass config
+                config);
+
         RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(exampleTrajectory);
 
         // Run path following command, then stop at the end.

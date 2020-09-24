@@ -65,15 +65,33 @@ public class DriveSubsystem extends SubsystemBase {
         rightSlave = new WPI_VictorSPX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
+        
+
+        // feederTalon.configAllowableClosedloopError(0, 0, kTimeoutMs);
+
+        // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
+        // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
+        leftMaster.configFactoryDefault();
+        rightMaster.configFactoryDefault();
+        
         leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
 
-        // feederTalon.configAllowableClosedloopError(0, 0, kTimeoutMs);
+        leftMaster.configNominalOutputForward(Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configNominalOutputReverse(-Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configPeakOutputForward(Contants.LEFT_DRIVE_PEAK, kTimeoutMs);
+        leftMaster.configPeakOutputReverse(-Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
+
+        rightMaster.configNominalOutputForward(Contants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configNominalOutputReverse(-Contants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configPeakOutputForward(Contants.RIGHT_DRIVE_PEAK, kTimeoutMs);
+        rightMaster.configPeakOutputReverse(-Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
+
         leftMaster.config_kF(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_F, kTimeoutMs);
         leftMaster.config_kP(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_P, kTimeoutMs);
         leftMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
         leftMaster.config_kD(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_D, kTimeoutMs);
-        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
+        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);   // FeederSubsystem had this commented out .configAllowableClosedloopError(0, 0, kTimeoutMs);
         leftMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
         rightMaster.config_kF(kPIDLoopIdx, Constants.RIGHT_DRIVE_PID_F, kTimeoutMs);
@@ -83,21 +101,25 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
+        leftMaster.enableVoltageCompensation(true);
+        rightMaster.enableVoltageCompensation(true);
+
         m_drive = new DifferentialDrive(leftMaster, rightMaster);
 
+        // All Pigeon setup and methods copied from frc2706-2020-DriveBase2020
+        // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/DriveBase2020.java
         pigeon = new PigeonIMU(new WPI_TalonSRX(Constants.PIGEON_ID));
         pigeon.setFusedHeading(0d, Constants.CAN_TIMEOUT_LONG);
+        fusionStatus = new PigeonIMU.FusionStatus();
 
         zeroEncoders();
-
-        fusionStatus = new PigeonIMU.FusionStatus();
         m_odometry = new DifferentialDriveOdometry(getHeadingRotation2d());
-
-        motorFeedForward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter);
 
     }
 
+    /**
+     * Make the slave motors follow the master motors.
+     */
     public void followMotors() {
         leftSlave.follow(leftMaster);
         rightSlave.follow(rightMaster);
@@ -119,18 +141,22 @@ public class DriveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // Update the odometry in the periodic block
         updateOdometry();
     }
 
+    /**
+     * Determine current pose (x, y and orientation) using heading and encoder distances.
+     */
     public void updateOdometry() {
-        // Update the odometry in the periodic block
+        
         m_odometry.update(getHeadingRotation2d(), leftMaster.getSelectedSensorPosition(),
                 rightMaster.getSelectedSensorPosition());
     }
 
     /**
-     * Returns the currently-estimated pose of the robot. 4 REQUIRED FOR RAMSETE
-     * COMMAND
+     * Returns the currently-estimated pose of the robot.
+     * REQUIRED FOR RAMSETE COMMAND
      * 
      * @return The pose.
      */
@@ -139,18 +165,18 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Zeroes the heading of the robot.
+     * Zero the heading of the robot.
      */
     public void zeroHeading() {
         pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
     }
 
     /**
-         * Returns true if the pigeon has been defined
-         * @return True if the pigeon is defined, false otherwise
-         */
-        public final boolean hasPigeon() {
-            return pigeon != null;
+     * Returns true if the pigeon has been defined
+     * @return True if the pigeon is defined, false otherwise
+     */
+    public final boolean hasPigeon() {
+        return pigeon != null;
     }
     
     /**
@@ -168,7 +194,7 @@ public class DriveSubsystem extends SubsystemBase {
     /**
      * Gets the current angle and returns as a Rotation2d
      * 
-     * @return
+     * @return Rotation2D A rotation in a 2d coordinate frame represented a point on the unit circle (cosine and sine).
      */
     public Rotation2d getHeadingRotation2d() {
         return Rotation2d.fromDegrees(getHeading()); // DO I NEED TO ADD NEW ??? e.g new Rotation2d.fromDegrees()
@@ -209,9 +235,22 @@ public class DriveSubsystem extends SubsystemBase {
                 rightFeedforward / 12.0);
 
         /**
-         * HUGE NOTE HERE
-         * 
          * Voltage compensation is not on which means that instead of / 12.0 it may need to be divide by current bus voltage.
+         * That was a tip I found on Cheif Delpi. Link to post and the code example below:
+         * https://www.chiefdelphi.com/t/falcon-500-closed-loop-velocity/378170/18
+         * 
+         * I've looked into the SimpleMotorFeedforward. The output of this object makes sense if it tries to do -12 to 12 but
+         * the way it figures out what it should be is entirely based on the 3 constants required to create the object with no limit
+         * to going past 12V. This makes me wonder if the RobotCharacterization tool has any voltage compensation for when it creates these constants.
+         * Though since their constants my guess is RobotCharacterization tool assumes battery is at full charge (or at whatever charge you run the tests at).
+         * Meaning it computes constants that match the current battery level.
+         * 
+         * This makes be wonder if I should take battery level into account in the velocity loop. I don't think I need to but if it does become a problem
+         * I think the best solution is to make the talon do the work and turn on voltage compensation. This would mean doing the following code:
+         * talon.configVoltageCompSaturation(12); // ensure the "full output" will now scale to 12 Volts
+         * talon.enableVoltageCompensation(true); // turn on the feature on
+         * 
+         * I am not sure how to figure out if it's needed other than testing it experimentally.
          */
 
         
@@ -224,13 +263,6 @@ public class DriveSubsystem extends SubsystemBase {
         // simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
         // );
 
-    }
-
-    /**
-     * Returns the motor feed forwards
-     */
-    public SimpleMotorFeedforward getMotorFeedForward() {
-        return motorFeedForward;
     }
 
     /**
