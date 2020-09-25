@@ -51,7 +51,7 @@ public class DriveSubsystem extends SubsystemBase {
     private PigeonIMU pigeon;
     private PigeonIMU.FusionStatus fusionStatus;
 
-    // DriveBase2020 is a singleton class as it represents a physical subsystem
+    // DriveSubsystem is a singleton class as it represents a physical subsystem
     private static DriveSubsystem currentInstance;
 
     /**
@@ -65,16 +65,16 @@ public class DriveSubsystem extends SubsystemBase {
         rightSlave = new WPI_VictorSPX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
-    
-
         // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
         leftMaster.configFactoryDefault();
         rightMaster.configFactoryDefault();
         
+        // Config the feedbacksenor
         leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
 
+        // Set the minimum and maximum output when target setpoint isn't in tolarance range
         leftMaster.configNominalOutputForward(Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
         leftMaster.configNominalOutputReverse(-Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
         leftMaster.configPeakOutputForward(Contants.LEFT_DRIVE_PEAK, kTimeoutMs);
@@ -99,6 +99,7 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
+        // Voltage Compensation with account for a drop is battery voltage as the match goes on.
         leftMaster.enableVoltageCompensation(true);
         rightMaster.enableVoltageCompensation(true);
 
@@ -192,10 +193,10 @@ public class DriveSubsystem extends SubsystemBase {
     /**
      * Gets the current angle and returns as a Rotation2d
      * 
-     * @return Rotation2D A rotation in a 2d coordinate frame represented a point on the unit circle (cosine and sine).
+     * @return Rotation2D is a rotation in a 2d coordinate frame represented by a point on the unit circle (cosine and sine).
      */
     public Rotation2d getHeadingRotation2d() {
-        return Rotation2d.fromDegrees(getHeading()); // DO I NEED TO ADD NEW ??? e.g new Rotation2d.fromDegrees()
+        return Rotation2d.fromDegrees(getHeading());
     }
 
     /**
@@ -244,13 +245,7 @@ public class DriveSubsystem extends SubsystemBase {
          * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
          * );
          * 
-         * 
          */
-
-
-        
-
-        
     }
 
     /**
