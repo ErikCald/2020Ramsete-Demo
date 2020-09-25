@@ -65,9 +65,7 @@ public class DriveSubsystem extends SubsystemBase {
         rightSlave = new WPI_VictorSPX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
-        
-
-        // feederTalon.configAllowableClosedloopError(0, 0, kTimeoutMs);
+    
 
         // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
@@ -235,34 +233,24 @@ public class DriveSubsystem extends SubsystemBase {
                 rightFeedforward / 12.0);
 
         /**
-         * Voltage compensation is not on which means that instead of / 12.0 it may need to be divide by current bus voltage.
-         * That was a tip I found on Cheif Delpi. Link to post and the code example below:
+         * The code example is from this post:
          * https://www.chiefdelphi.com/t/falcon-500-closed-loop-velocity/378170/18
          * 
-         * I've looked into the SimpleMotorFeedforward. The output of this object makes sense if it tries to do -12 to 12 but
-         * the way it figures out what it should be is entirely based on the 3 constants required to create the object with no limit
-         * to going past 12V. This makes me wonder if the RobotCharacterization tool has any voltage compensation for when it creates these constants.
-         * Though since their constants my guess is RobotCharacterization tool assumes battery is at full charge (or at whatever charge you run the tests at).
-         * Meaning it computes constants that match the current battery level.
+         * Super helpful example code to include the simpleMotorForward
+         * falconMotor.set(
+         * ControlMode.Velocity,
+         * velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
+         * DemandType.ArbitraryFeedForward,
+         * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
+         * );
          * 
-         * This makes be wonder if I should take battery level into account in the velocity loop. I don't think I need to but if it does become a problem
-         * I think the best solution is to make the talon do the work and turn on voltage compensation. This would mean doing the following code:
-         * talon.configVoltageCompSaturation(12); // ensure the "full output" will now scale to 12 Volts
-         * talon.enableVoltageCompensation(true); // turn on the feature on
          * 
-         * I am not sure how to figure out if it's needed other than testing it experimentally.
          */
+
 
         
 
-        // Super helpful example code to include the simpleMotorForward
-        // falconMotor.set(
-        // ControlMode.Velocity,
-        // velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
-        // DemandType.ArbitraryFeedForward,
-        // simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
-        // );
-
+        
     }
 
     /**
