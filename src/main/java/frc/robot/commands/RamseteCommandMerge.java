@@ -22,7 +22,7 @@ import edu.wpi.first.wpilibj2.command.CommandBase;
 import frc.robot.Constants;
 
 /**
- * This command was coped and modified from RamseteCommand on WpiLib.
+ * This command was copied and modified from RamseteCommand on WpiLib.
  * https://github.com/wpilibsuite/allwpilib/blob/master/wpilibNewCommands/src/main/java/edu/wpi/first/wpilibj2/command/RamseteCommand.java
  * 
  * A command that uses a RAMSETE controller ({@link RamseteController}) to follow a trajectory
