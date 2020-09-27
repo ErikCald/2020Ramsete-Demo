@@ -75,14 +75,14 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
 
         // Set the minimum and maximum output when target setpoint isn't in tolarance range
-        leftMaster.configNominalOutputForward(Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
-        leftMaster.configNominalOutputReverse(-Contants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
-        leftMaster.configPeakOutputForward(Contants.LEFT_DRIVE_PEAK, kTimeoutMs);
+        leftMaster.configNominalOutputForward(Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configNominalOutputReverse(-Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configPeakOutputForward(Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
         leftMaster.configPeakOutputReverse(-Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
 
-        rightMaster.configNominalOutputForward(Contants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
-        rightMaster.configNominalOutputReverse(-Contants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
-        rightMaster.configPeakOutputForward(Contants.RIGHT_DRIVE_PEAK, kTimeoutMs);
+        rightMaster.configNominalOutputForward(Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configNominalOutputReverse(-Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configPeakOutputForward(Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
         rightMaster.configPeakOutputReverse(-Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
 
         leftMaster.config_kF(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_F, kTimeoutMs);
