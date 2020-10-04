@@ -8,19 +8,11 @@
 package frc.robot.subsystems;
 import frc.robot.Constants;
 
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.interfaces.Gyro;
-import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-
-// Imports I added
 import com.ctre.phoenix.motorcontrol.TalonSRXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -38,7 +30,7 @@ public class DriveSubsystem extends SubsystemBase {
     private DifferentialDrive m_drive;
 
     // Motor Controllers specific to this drivebase subsystem
-    private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon;
+    private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon; // Pigeon may be connected to the climber talon
     private WPI_VictorSPX leftSlave, rightSlave;
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
@@ -74,7 +66,6 @@ public class DriveSubsystem extends SubsystemBase {
         leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
 
-        // Set the minimum and maximum output when target setpoint isn't in tolarance range
         leftMaster.configNominalOutputForward(Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
         leftMaster.configNominalOutputReverse(-Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
         leftMaster.configPeakOutputForward(Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
@@ -148,7 +139,6 @@ public class DriveSubsystem extends SubsystemBase {
      * Determine current pose (x, y and orientation) using heading and encoder distances.
      */
     public void updateOdometry() {
-        
         m_odometry.update(getHeadingRotation2d(), leftMaster.getSelectedSensorPosition(),
                 rightMaster.getSelectedSensorPosition());
     }
