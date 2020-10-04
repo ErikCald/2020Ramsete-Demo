@@ -8,19 +8,11 @@
 package frc.robot.subsystems;
 import frc.robot.Constants;
 
-import edu.wpi.first.wpilibj.ADXRS450_Gyro;
-import edu.wpi.first.wpilibj.Encoder;
-import edu.wpi.first.wpilibj.PWMVictorSPX;
-import edu.wpi.first.wpilibj.SpeedControllerGroup;
-import edu.wpi.first.wpilibj.interfaces.Gyro;
-import edu.wpi.first.wpilibj.kinematics.DifferentialDriveWheelSpeeds;
 import edu.wpi.first.wpilibj.drive.DifferentialDrive;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-
-// Imports I added
 import com.ctre.phoenix.motorcontrol.TalonSRXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -38,7 +30,7 @@ public class DriveSubsystem extends SubsystemBase {
     private DifferentialDrive m_drive;
 
     // Motor Controllers specific to this drivebase subsystem
-    private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon;
+    private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon; // Pigeon may be connected to the climber talon
     private WPI_VictorSPX leftSlave, rightSlave;
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
@@ -51,7 +43,7 @@ public class DriveSubsystem extends SubsystemBase {
     private PigeonIMU pigeon;
     private PigeonIMU.FusionStatus fusionStatus;
 
-    // DriveBase2020 is a singleton class as it represents a physical subsystem
+    // DriveSubsystem is a singleton class as it represents a physical subsystem
     private static DriveSubsystem currentInstance;
 
     /**
@@ -65,15 +57,30 @@ public class DriveSubsystem extends SubsystemBase {
         rightSlave = new WPI_VictorSPX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
+        // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
+        // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
+        leftMaster.configFactoryDefault();
+        rightMaster.configFactoryDefault();
+        
+        // Config the feedbacksenor
         leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
 
-        // feederTalon.configAllowableClosedloopError(0, 0, kTimeoutMs);
+        leftMaster.configNominalOutputForward(Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configNominalOutputReverse(-Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
+        leftMaster.configPeakOutputForward(Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
+        leftMaster.configPeakOutputReverse(-Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
+
+        rightMaster.configNominalOutputForward(Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configNominalOutputReverse(-Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
+        rightMaster.configPeakOutputForward(Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
+        rightMaster.configPeakOutputReverse(-Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
+
         leftMaster.config_kF(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_F, kTimeoutMs);
         leftMaster.config_kP(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_P, kTimeoutMs);
         leftMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
         leftMaster.config_kD(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_D, kTimeoutMs);
-        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
+        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);   // FeederSubsystem had this commented out .configAllowableClosedloopError(0, 0, kTimeoutMs);
         leftMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
         rightMaster.config_kF(kPIDLoopIdx, Constants.RIGHT_DRIVE_PID_F, kTimeoutMs);
@@ -83,21 +90,26 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
+        // Voltage Compensation with account for a drop is battery voltage as the match goes on.
+        leftMaster.enableVoltageCompensation(true);
+        rightMaster.enableVoltageCompensation(true);
+
         m_drive = new DifferentialDrive(leftMaster, rightMaster);
 
+        // All Pigeon setup and methods copied from frc2706-2020-DriveBase2020
+        // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/DriveBase2020.java
         pigeon = new PigeonIMU(new WPI_TalonSRX(Constants.PIGEON_ID));
         pigeon.setFusedHeading(0d, Constants.CAN_TIMEOUT_LONG);
+        fusionStatus = new PigeonIMU.FusionStatus();
 
         zeroEncoders();
-
-        fusionStatus = new PigeonIMU.FusionStatus();
         m_odometry = new DifferentialDriveOdometry(getHeadingRotation2d());
-
-        motorFeedForward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter);
 
     }
 
+    /**
+     * Make the slave motors follow the master motors.
+     */
     public void followMotors() {
         leftSlave.follow(leftMaster);
         rightSlave.follow(rightMaster);
@@ -119,18 +131,21 @@ public class DriveSubsystem extends SubsystemBase {
 
     @Override
     public void periodic() {
+        // Update the odometry in the periodic block
         updateOdometry();
     }
 
+    /**
+     * Determine current pose (x, y and orientation) using heading and encoder distances.
+     */
     public void updateOdometry() {
-        // Update the odometry in the periodic block
         m_odometry.update(getHeadingRotation2d(), leftMaster.getSelectedSensorPosition(),
                 rightMaster.getSelectedSensorPosition());
     }
 
     /**
-     * Returns the currently-estimated pose of the robot. 4 REQUIRED FOR RAMSETE
-     * COMMAND
+     * Returns the currently-estimated pose of the robot.
+     * REQUIRED FOR RAMSETE COMMAND
      * 
      * @return The pose.
      */
@@ -139,18 +154,18 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Zeroes the heading of the robot.
+     * Zero the heading of the robot.
      */
     public void zeroHeading() {
         pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
     }
 
     /**
-         * Returns true if the pigeon has been defined
-         * @return True if the pigeon is defined, false otherwise
-         */
-        public final boolean hasPigeon() {
-            return pigeon != null;
+     * Returns true if the pigeon has been defined
+     * @return True if the pigeon is defined, false otherwise
+     */
+    public final boolean hasPigeon() {
+        return pigeon != null;
     }
     
     /**
@@ -168,10 +183,10 @@ public class DriveSubsystem extends SubsystemBase {
     /**
      * Gets the current angle and returns as a Rotation2d
      * 
-     * @return
+     * @return Rotation2D is a rotation in a 2d coordinate frame represented by a point on the unit circle (cosine and sine).
      */
     public Rotation2d getHeadingRotation2d() {
-        return Rotation2d.fromDegrees(getHeading()); // DO I NEED TO ADD NEW ??? e.g new Rotation2d.fromDegrees()
+        return Rotation2d.fromDegrees(getHeading());
     }
 
     /**
@@ -209,28 +224,18 @@ public class DriveSubsystem extends SubsystemBase {
                 rightFeedforward / 12.0);
 
         /**
-         * HUGE NOTE HERE
+         * The code example is from this post:
+         * https://www.chiefdelphi.com/t/falcon-500-closed-loop-velocity/378170/18
          * 
-         * Voltage compensation is not on which means that instead of / 12.0 it may need to be divide by current bus voltage.
+         * Super helpful example code to include the simpleMotorForward
+         * falconMotor.set(
+         * ControlMode.Velocity,
+         * velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
+         * DemandType.ArbitraryFeedForward,
+         * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
+         * );
+         * 
          */
-
-        
-
-        // Super helpful example code to include the simpleMotorForward
-        // falconMotor.set(
-        // ControlMode.Velocity,
-        // velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
-        // DemandType.ArbitraryFeedForward,
-        // simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
-        // );
-
-    }
-
-    /**
-     * Returns the motor feed forwards
-     */
-    public SimpleMotorFeedforward getMotorFeedForward() {
-        return motorFeedForward;
     }
 
     /**
