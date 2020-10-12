@@ -41,6 +41,9 @@ public class RobotContainer {
     // The driver's controller
     XboxController m_driverController = new XboxController(Constants.kDriverControllerPort);
 
+    // Default Trajectory Config
+    TrajectoryConfig defaultConfig;
+
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
      */
@@ -75,19 +78,7 @@ public class RobotContainer {
      */
     public Command getAutonomousCommand() {
 
-        // Create a voltage constraint to ensure we don't accelerate too fast
-        var autoVoltageConstraint = new DifferentialDriveVoltageConstraint(
-                new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter),
-                Constants.kDriveKinematics, 10);
-
-        // Create config for trajectory
-        TrajectoryConfig config = new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
-        Constants.kMaxAccelerationMetersPerSecondSquared)
-                        // Add kinematics to ensure max speed is actually obeyed
-                        .setKinematics(Constants.kDriveKinematics)
-                        // Apply the voltage constraint
-                        .addConstraint(autoVoltageConstraint);
+        defaultConfig = createDefaultConfig();
 
         // An example trajectory to follow. All units in meters.
         Trajectory exampleTrajectory = TrajectoryGenerator.generateTrajectory(
@@ -98,7 +89,7 @@ public class RobotContainer {
                 // End 3 meters straight ahead of where we started, facing forward
                 new Pose2d(3, 0, new Rotation2d(0)),
                 // Pass config
-                config);
+                getConfig());
 
         Trajectory driveForwardTrajectory = TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction
@@ -107,13 +98,66 @@ public class RobotContainer {
                 // End 1 meters straight ahead of where we started, facing forward
                 new Pose2d(1, 0, new Rotation2d(0)),
                 // Pass config
-                config);
+                getConfig()); 
 
+        Trajectory turnOnTheSpotTrajectory = TrajectoryGenerator.generateTrajectory(
+                // Start at the origin facing the +X direction
+                new Pose2d(0, 0, new Rotation2d(0)),
+
+                // End 90 degrees clockwise in the same location
+                new Pose2d(0.001, 0, Rotation2d.fromDegrees(90)),
+                // Pass config
+                getConfig());
+        
         RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(exampleTrajectory);
 
         // Run path following command, then stop at the end.
         return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
 
     }
+
+    /**
+     * Create the default TrajectoryConfig that can be used for every trajectory.
+     * 
+     * @return TrajectoryConfig of the default config
+     */
+    private TrajectoryConfig createDefaultConfig() {
+        // Create a voltage constraint to ensure we don't accelerate too fast
+        var autoVoltageConstraint = new DifferentialDriveVoltageConstraint(
+                new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
+                Constants.kaVoltSecondsSquaredPerMeter),
+                Constants.kDriveKinematics, 10);
+
+        return new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
+                        Constants.kMaxAccelerationMetersPerSecondSquared)
+                        // Add kinematics to ensure max speed is actually obeyed
+                        .setKinematics(Constants.kDriveKinematics)
+                        // Apply the voltage constraint
+                        .addConstraint(autoVoltageConstraint);
+    }
+    
+    /**
+     *  Get Config will either return default config or change the default config to 
+     *  also have an intial and final velocity by giving this method two doubles.
+     *
+     *  @return TrajectoryConfig with an intial and final velocity of 0
+     */
+    private TrajectoryConfig getConfig() {
+        return defaultConfig;
+    }
+
+    /**
+     *  Get Config will either return default config or a modified default config to 
+     *  also have an intial and final velocity.
+     *
+     *  @param initialVelocity The initial velocity in meters per second
+     *  @param finalVelocity The final velocity in meters per second
+     * 
+     *  @return TrajectoryConfig with the intial and final velocities from constructor
+     */
+    private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity) {
+        return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity);
+    }
+
 
 }
