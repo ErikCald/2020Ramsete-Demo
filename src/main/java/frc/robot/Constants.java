@@ -36,14 +36,10 @@ public class Constants {
     public static final double LEFT_DRIVE_PID_F = 0.0;
     public static final double LEFT_DRIVE_PID_P = 0.018d;
     public static final double LEFT_DRIVE_PID_D = 0.0016d;
-    public static final double LEFT_DRIVE_NOMIAL = 0.0;
-    public static final double LEFT_DRIVE_PEAK = 1.0;
 
     public static final double RIGHT_DRIVE_PID_F = 0.0;
     public static final double RIGHT_DRIVE_PID_P = 0.018d;
     public static final double RIGHT_DRIVE_PID_D = 0.0016d;
-    public static final double RIGHT_DRIVE_NOMIAL = 0.0;
-    public static final double RIGHT_DRIVE_PEAK = 1.0;
 
 
     public static final double kTrackwidthMeters = 0.69;
