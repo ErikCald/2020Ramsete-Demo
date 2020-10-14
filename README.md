@@ -23,6 +23,7 @@ All info here comes from WPILib Docs tutorial -> https://docs.wpilib.org/en/stab
 9. Be sure to record/write/save the values kS, kV, kA and r-squared
 10. Change the loop type to Velocity. 
 11. Change the Gain Settings Preset to WPILib (2020-)
-12. Make sure to change the other presets to match the robot. kV and kA should match the numbers on the left side. (eg. Controller Type: Talon, Encoder EPR: ...). If you have trouble matching these to your robot here is a list of the presets and what they do. https://docs.wpilib.org/en/stable/docs/software/wpilib-tools/robot-characterization/analyzing-feedback.html#enter-controller-parameters
-13. Click on Calculate Optimal Controller Gains.
-14. Record/write/save the values beside kP and kD. In our case, since it is a velocity controller, only the P gain is required.
+12. Make sure to change the other presets to match the robot. kV and kA should match the numbers on the left side. (eg. Controller Type: Talon, Encoder EPR: ...). Make sure units (at the top) is in Meters. If you have trouble matching these to your robot here is a list of the presets and what they do. https://docs.wpilib.org/en/stable/docs/software/wpilib-tools/robot-characterization/analyzing-feedback.html#enter-controller-parameters
+13. There is a warning in the tutorial, "many “smart motor controllers” (such as the Talon SRX, Talon FX, and SparkMax) have default settings that apply substantial low-pass filtering to their encoder velocity measurements, which introduces a significant amount of phase lag. This can cause the calculated gains for velocity loops to be unstable. To rectify this, either decrease the amount of filtering through the controller’s API, or reduce the magnitude of the PID gains - it has been found that shrinking gains by about a factor of 10 works well for most default filtering settings."
+14. Click on Calculate Optimal Controller Gains.
+15. Record/write/save the values beside kP and kD. In our case, since it is a velocity controller, only the P gain is required.
