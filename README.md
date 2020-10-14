@@ -20,9 +20,9 @@ All info here comes from WPILib Docs tutorial -> https://docs.wpilib.org/en/stab
 6. Launch Data Analyzer
 7. Load the data file
 8. Click Analyze Data
-9. Be sure to record/write/save the values beside kS, kV, kA and r-squared
+9. Be sure to record/write/save the values kS, kV, kA and r-squared
 10. Change the loop type to Velocity. 
 11. Change the Gain Settings Preset to WPILib (2020-)
-12. Make sure to change the other presets to match the robot. (eg. Controller Type: Talon, Encoder EPR: ...). If you have trouble matching these to your robot here is a list of the presets and what they do. https://docs.wpilib.org/en/stable/docs/software/wpilib-tools/robot-characterization/analyzing-feedback.html#enter-controller-parameters
-13. Click on Calculate Optimal Controller Gains. kV and kA should match the numbers on the left side.
-14. Record/write/save the values beside kP and kD. Since it is a velocity controller, only a P gain is required.
+12. Make sure to change the other presets to match the robot. kV and kA should match the numbers on the left side. (eg. Controller Type: Talon, Encoder EPR: ...). If you have trouble matching these to your robot here is a list of the presets and what they do. https://docs.wpilib.org/en/stable/docs/software/wpilib-tools/robot-characterization/analyzing-feedback.html#enter-controller-parameters
+13. Click on Calculate Optimal Controller Gains.
+14. Record/write/save the values beside kP and kD. In our case, since it is a velocity controller, only the P gain is required.
