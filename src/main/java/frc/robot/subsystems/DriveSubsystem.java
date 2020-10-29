@@ -31,7 +31,7 @@ public class DriveSubsystem extends SubsystemBase {
 
     // Motor Controllers specific to this drivebase subsystem
     private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon; // Pigeon may be connected to the climber talon
-    private WPI_VictorSPX leftSlave, rightSlave;
+    private WPI_TalonSRX leftSlave, rightSlave;
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
 
@@ -53,8 +53,8 @@ public class DriveSubsystem extends SubsystemBase {
 
         leftMaster = new WPI_TalonSRX(Constants.LEFT_FRONT_MOTOR);
         rightMaster = new WPI_TalonSRX(Constants.RIGHT_FRONT_MOTOR);
-        leftSlave = new WPI_VictorSPX(Constants.LEFT_REAR_MOTOR);
-        rightSlave = new WPI_VictorSPX(Constants.RIGHT_REAR_MOTOR);
+        leftSlave = new WPI_TalonSRX(Constants.LEFT_REAR_MOTOR);
+        rightSlave = new WPI_TalonSRX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
         // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
@@ -62,19 +62,14 @@ public class DriveSubsystem extends SubsystemBase {
         leftMaster.configFactoryDefault();
         rightMaster.configFactoryDefault();
         
+        // leftMaster.setInverted(true);
+        // leftSlave.setInverted(true);
+        rightMaster.setInverted(true);
+        rightSlave.setInverted(true);
+
         // Config the feedbacksenor
         leftMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
         rightMaster.configSelectedFeedbackSensor(FeedbackDevice.CTRE_MagEncoder_Relative, kPIDLoopIdx, kTimeoutMs);
-
-        leftMaster.configNominalOutputForward(Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
-        leftMaster.configNominalOutputReverse(-Constants.LEFT_DRIVE_NOMIAL, kTimeoutMs);
-        leftMaster.configPeakOutputForward(Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
-        leftMaster.configPeakOutputReverse(-Constants.LEFT_DRIVE_PEAK, kTimeoutMs);
-
-        rightMaster.configNominalOutputForward(Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
-        rightMaster.configNominalOutputReverse(-Constants.RIGHT_DRIVE_NOMIAL, kTimeoutMs);
-        rightMaster.configPeakOutputForward(Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
-        rightMaster.configPeakOutputReverse(-Constants.RIGHT_DRIVE_PEAK, kTimeoutMs);
 
         leftMaster.config_kF(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_F, kTimeoutMs);
         leftMaster.config_kP(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_P, kTimeoutMs);
@@ -90,7 +85,7 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
-        // Voltage Compensation with account for a drop is battery voltage as the match goes on.
+        // Voltage Compensation will account for the drop in battery voltage as the match goes on.
         leftMaster.enableVoltageCompensation(true);
         rightMaster.enableVoltageCompensation(true);
 
@@ -98,12 +93,12 @@ public class DriveSubsystem extends SubsystemBase {
 
         // All Pigeon setup and methods copied from frc2706-2020-DriveBase2020
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/DriveBase2020.java
-        pigeon = new PigeonIMU(new WPI_TalonSRX(Constants.PIGEON_ID));
+        pigeon = new PigeonIMU(leftSlave);   //new WPI_TalonSRX(Constants.PIGEON_ID)
         pigeon.setFusedHeading(0d, Constants.CAN_TIMEOUT_LONG);
         fusionStatus = new PigeonIMU.FusionStatus();
 
         zeroEncoders();
-        m_odometry = new DifferentialDriveOdometry(getHeadingRotation2d());
+        m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getCurrentHeading()));
 
     }
 
@@ -133,14 +128,20 @@ public class DriveSubsystem extends SubsystemBase {
     public void periodic() {
         // Update the odometry in the periodic block
         updateOdometry();
+
+        // System.out.println("get current pose: " + getPose().toString());
+        
     }
 
     /**
      * Determine current pose (x, y and orientation) using heading and encoder distances.
      */
     public void updateOdometry() {
-        m_odometry.update(getHeadingRotation2d(), leftMaster.getSelectedSensorPosition(),
-                rightMaster.getSelectedSensorPosition());
+        m_odometry.update(Rotation2d.fromDegrees(getCurrentHeading()), getLeftEncoderPosistion(),
+                getRightEncoderPosistion());
+
+        
+       //System.out.printf("------Left/Right Encoder: %d  /  %d,   Left/Right Side in Meters: %.4f  /  %.4f   \n", leftMaster.getSelectedSensorPosition(), rightMaster.getSelectedSensorPosition(), getLeftEncoderPosistion(), getRightEncoderPosistion()); //getPose().toString()
     }
 
     /**
@@ -154,11 +155,23 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Zero the heading of the robot.
+     * Get the posistion of the left encoder
+     * 
+     * @return Encoder posistion value 
      */
-    public void zeroHeading() {
-        pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
+    private double getLeftEncoderPosistion() {
+        return (leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.15*Math.PI);
     }
+
+    /**
+     * Get the posistion of the right encoder
+     * 
+     * @return Encoder posistion value 
+     */
+    private double getRightEncoderPosistion() {
+        return -(rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.15*Math.PI);
+    }
+
 
     /**
      * Returns true if the pigeon has been defined
@@ -173,20 +186,11 @@ public class DriveSubsystem extends SubsystemBase {
      * 
      * @return The current heading (In degrees) or 0 if there is no pigeon.
      */
-    public double getHeading() {
+    public double getCurrentHeading() {
         if (!hasPigeon())
             return 0d;
         pigeon.getFusedHeading(fusionStatus);
         return fusionStatus.heading;
-    }
-
-    /**
-     * Gets the current angle and returns as a Rotation2d
-     * 
-     * @return Rotation2D is a rotation in a 2d coordinate frame represented by a point on the unit circle (cosine and sine).
-     */
-    public Rotation2d getHeadingRotation2d() {
-        return Rotation2d.fromDegrees(getHeading());
     }
 
     /**
@@ -195,8 +199,8 @@ public class DriveSubsystem extends SubsystemBase {
      * @param pose The pose to which to set the odometry.
      */
     public void resetOdometry(Pose2d pose) {
-        // resetEncoders();
-        m_odometry.resetPosition(pose, getHeadingRotation2d());
+        zeroEncoders();
+        m_odometry.resetPosition(pose, Rotation2d.fromDegrees(getCurrentHeading()));
     }
 
     /**
@@ -220,8 +224,10 @@ public class DriveSubsystem extends SubsystemBase {
     public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
         leftMaster.set(ControlMode.Velocity, leftVelocity, DemandType.ArbitraryFeedForward,
                 leftFeedforward / 12.0);
-        rightMaster.set(ControlMode.Velocity, -rightVelocity, DemandType.ArbitraryFeedForward,
+        rightMaster.set(ControlMode.Velocity, rightVelocity, DemandType.ArbitraryFeedForward,
                 rightFeedforward / 12.0);
+
+        System.out.printf("------ tankDriveVelocoties output: LV: %.2f, RV: %.2f, LF: %.2f, RF: %.2f, CurrectPose: %s   \n", leftVelocity, rightVelocity, leftFeedforward/12, rightFeedforward/12, getPose().toString());
 
         /**
          * The code example is from this post:
@@ -244,5 +250,12 @@ public class DriveSubsystem extends SubsystemBase {
     public void zeroEncoders() {
         leftMaster.getSensorCollection().setQuadraturePosition(0, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.getSensorCollection().setQuadraturePosition(0, Constants.CAN_TIMEOUT_SHORT);
+    }
+
+    /**
+     * Zero the heading of the robot.
+     */
+    public void zeroHeading() {
+        pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
     }
 }

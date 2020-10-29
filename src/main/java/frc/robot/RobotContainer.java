@@ -12,6 +12,7 @@ import frc.robot.commands.*;
 import java.util.List;
 
 import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.controller.RamseteController;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
@@ -23,8 +24,11 @@ import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj.trajectory.constraint.DifferentialDriveVoltageConstraint;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.RamseteCommand;
 import edu.wpi.first.wpilibj2.command.RunCommand;
+import edu.wpi.first.wpilibj2.command.StartEndCommand;
+import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
 /**
@@ -39,7 +43,7 @@ public class RobotContainer {
     private final DriveSubsystem m_robotDrive = new DriveSubsystem();
 
     // The driver's controller
-    XboxController m_driverController = new XboxController(Constants.kDriverControllerPort);
+    Joystick m_driverController = new Joystick(Constants.kDriverControllerPort);
 
     // Default Trajectory Config
     TrajectoryConfig defaultConfig;
@@ -59,6 +63,8 @@ public class RobotContainer {
                 new RunCommand(() -> m_robotDrive.arcadeDrive(m_driverController.getY(GenericHID.Hand.kLeft),
                         m_driverController.getX(GenericHID.Hand.kRight)), m_robotDrive));
 
+
+
     }
 
     /**
@@ -68,6 +74,14 @@ public class RobotContainer {
      * calling passing it to a {@link JoystickButton}.
      */
     private void configureButtonBindings() {
+
+        Command test = new RunCommand(
+            () -> m_robotDrive.tankDriveVelocities(500, 500, 50, 50),
+            m_robotDrive
+        );
+        new JoystickButton(m_driverController, XboxController.Button.kB.value)
+            .whenHeld(test)
+            .whenReleased(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
 
     }
 
@@ -93,23 +107,28 @@ public class RobotContainer {
 
         Trajectory driveForwardTrajectory = TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction
-                new Pose2d(0, 0, new Rotation2d(0)),
+                List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 1 meters straight ahead of where we started, facing forward
-                new Pose2d(1, 0, new Rotation2d(0)),
+                new Pose2d(1, 0, new Rotation2d(0))),
                 // Pass config
                 getConfig()); 
 
         Trajectory turnOnTheSpotTrajectory = TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction
-                new Pose2d(0, 0, new Rotation2d(0)),
+                List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 90 degrees clockwise in the same location
-                new Pose2d(0.001, 0, Rotation2d.fromDegrees(90)),
+                new Pose2d(1, 0, Rotation2d.fromDegrees(90))),
                 // Pass config
                 getConfig());
         
-        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(exampleTrajectory);
+        m_robotDrive.zeroHeading();
+        m_robotDrive.resetOdometry(new Pose2d(0, 0, new Rotation2d(0)));
+
+        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(driveForwardTrajectory);
+
+        
 
         // Run path following command, then stop at the end.
         return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
@@ -126,7 +145,7 @@ public class RobotContainer {
         var autoVoltageConstraint = new DifferentialDriveVoltageConstraint(
                 new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
                 Constants.kaVoltSecondsSquaredPerMeter),
-                Constants.kDriveKinematics, 10);
+                Constants.kDriveKinematics, 8);
 
         return new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
                         Constants.kMaxAccelerationMetersPerSecondSquared)
@@ -137,27 +156,48 @@ public class RobotContainer {
     }
     
     /**
-     *  Get Config will either return default config or change the default config to 
-     *  also have an intial and final velocity by giving this method two doubles.
+     *  Get Config will either return default config or a modified default config.
      *
-     *  @return TrajectoryConfig with an intial and final velocity of 0
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
      */
     private TrajectoryConfig getConfig() {
         return defaultConfig;
     }
 
     /**
-     *  Get Config will either return default config or a modified default config to 
-     *  also have an intial and final velocity.
+     *  Get Config will either return default config or a modified default config.
      *
      *  @param initialVelocity The initial velocity in meters per second
      *  @param finalVelocity The final velocity in meters per second
      * 
-     *  @return TrajectoryConfig with the intial and final velocities from constructor
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
      */
     private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity) {
         return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity);
     }
 
+    /**
+     *  Get Config will either return default config or a modified default config.
+     *
+     *  @param driveBackwards will change the config to drive the robot backwards
+     * 
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
+     */
+    private TrajectoryConfig getConfig(boolean driveBackwards) {
+        return defaultConfig.setReversed(driveBackwards);
+    }
+
+    /**
+     *  Get Config will either return default config or a modified default config.
+     *
+     *  @param initialVelocity The initial velocity in meters per second
+     *  @param finalVelocity The final velocity in meters per second
+     *  @param driveBackwards will change the config to drive the robot backwards
+     * 
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
+     */
+    private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity, boolean driveBackwards) {
+        return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity).setReversed(driveBackwards);
+    }
 
 }
