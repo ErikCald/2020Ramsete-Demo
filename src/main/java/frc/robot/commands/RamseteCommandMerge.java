@@ -65,7 +65,7 @@ public class RamseteCommandMerge extends CommandBase {
 
         m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter, Constants.kaVoltSecondsSquaredPerMeter);
 
-        m_endEarly = 1.0;
+        m_endEarly = 1.0d;
 
         addRequirements(m_driveSubsystem);
     }
@@ -96,6 +96,11 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void initialize() {
+        System.out.println("RamseteCommandMerge Initializing");
+        System.out.println(m_trajectory.toString());
+
+        System.out.println("Current Pose: " + m_driveSubsystem.getPose().toString());
+
         m_prevTime = 0;
         var initialState = m_trajectory.sample(0);
         m_prevSpeeds = m_kinematics.toWheelSpeeds(
@@ -118,6 +123,10 @@ public class RamseteCommandMerge extends CommandBase {
         var leftSpeedSetpoint = targetWheelSpeeds.leftMetersPerSecond;
         var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
         
+        // var leftSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
+        // var rightSpeedSetpoint = targetWheelSpeeds.leftMetersPerSecond;
+
+
         double leftFeedforward =
                     m_feedforward.calculate(leftSpeedSetpoint,
                             (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
@@ -133,6 +142,7 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
+        System.out.println("RamseteCommandMerge has ended");
         m_timer.stop();
     }
 

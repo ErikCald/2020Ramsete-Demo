@@ -26,23 +26,23 @@ public class Constants {
     public static int RIGHT_REAR_MOTOR = 4;    //robotSpecific(4, 4, 4, 4, 4);
     public static int LEFT_FRONT_MOTOR = 1;    //robotSpecific(1, 1, 1, 1, 1);  // I assume the id of this years robot is 4, robotSpecific is just an array and returns value of robotID
     public static int LEFT_REAR_MOTOR = 3;    //robotSpecific(3, 3, 2, 3, 3);
-    public static int CLIMBER_TALON = 10;      //robotSpecific(10, 10, -1, -1, 16);
-    public static int PIGEON_ID = CLIMBER_TALON;  //robotSpecific(CLIMBER_TALON, CLIMBER_TALON, RIGHT_REAR_MOTOR, LEFT_FRONT_MOTOR, LEFT_REAR_MOTOR, TALON_5_PLYBOY);
+    public static int CLIMBER_TALON = -1;      //robotSpecific(10, 10, -1, -1, 16);
+    public static int PIGEON_ID = LEFT_REAR_MOTOR;  //robotSpecific(CLIMBER_TALON, CLIMBER_TALON, RIGHT_REAR_MOTOR, LEFT_FRONT_MOTOR, LEFT_REAR_MOTOR, TALON_5_PLYBOY);
 
     // Timeouts for sending CAN bus commands
     public static final int CAN_TIMEOUT_SHORT = 10;
     public static final int CAN_TIMEOUT_LONG = 100;
 
     public static final double LEFT_DRIVE_PID_F = 0.0;
-    public static final double LEFT_DRIVE_PID_P = 0.018d;
-    public static final double LEFT_DRIVE_PID_D = 0.0016d;
+    public static final double LEFT_DRIVE_PID_P = 0.0101d;   // Robot Characterization Measured value: 0.0101
+    public static final double LEFT_DRIVE_PID_D = 0.0;
 
     public static final double RIGHT_DRIVE_PID_F = 0.0;
-    public static final double RIGHT_DRIVE_PID_P = 0.018d;
-    public static final double RIGHT_DRIVE_PID_D = 0.0016d;
+    public static final double RIGHT_DRIVE_PID_P = 0.0101d; // Value of 2020 robot : 0.018d
+    public static final double RIGHT_DRIVE_PID_D = 0.0;
 
 
-    public static final double kTrackwidthMeters = 0.69;
+    public static final double kTrackwidthMeters = 0.69; //CAD Measured TW: 0.69, experimentaly TW: 0.583 
     public static final DifferentialDriveKinematics kDriveKinematics =
         new DifferentialDriveKinematics(kTrackwidthMeters);
 
@@ -57,9 +57,9 @@ public class Constants {
     // for *your* robot's drive.
     // The Robot Characterization Toolsuite provides a convenient tool for obtaining these
     // values for your robot.
-    public static final double ksVolts = 0.22;
-    public static final double kvVoltSecondsPerMeter = 1.98;
-    public static final double kaVoltSecondsSquaredPerMeter = 0.2;
+    public static final double ksVolts = 1.16;
+    public static final double kvVoltSecondsPerMeter = 3.37;
+    public static final double kaVoltSecondsSquaredPerMeter = 0.573;
 
     // Example value only - as above, this must be tuned for your drive!
     public static final double kPDriveVel = 8.5;
@@ -72,7 +72,7 @@ public class Constants {
     /** 
     * Auto Constants
      */
-    public static final double kMaxSpeedMetersPerSecond = 3;
+    public static final double kMaxSpeedMetersPerSecond = 3;  // Measured with alot of inaccuracy: 3
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;
 
     // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
