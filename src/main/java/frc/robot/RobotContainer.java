@@ -156,27 +156,48 @@ public class RobotContainer {
     }
     
     /**
-     *  Get Config will either return default config or change the default config to 
-     *  also have an intial and final velocity by giving this method two doubles.
+     *  Get Config will either return default config or a modified default config.
      *
-     *  @return TrajectoryConfig with an intial and final velocity of 0
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
      */
     private TrajectoryConfig getConfig() {
         return defaultConfig;
     }
 
     /**
-     *  Get Config will either return default config or a modified default config to 
-     *  also have an intial and final velocity.
+     *  Get Config will either return default config or a modified default config.
      *
      *  @param initialVelocity The initial velocity in meters per second
      *  @param finalVelocity The final velocity in meters per second
      * 
-     *  @return TrajectoryConfig with the intial and final velocities from constructor
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
      */
     private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity) {
         return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity);
     }
 
+    /**
+     *  Get Config will either return default config or a modified default config.
+     *
+     *  @param driveBackwards will change the config to drive the robot backwards
+     * 
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
+     */
+    private TrajectoryConfig getConfig(boolean driveBackwards) {
+        return defaultConfig.setReversed(driveBackwards);
+    }
+
+    /**
+     *  Get Config will either return default config or a modified default config.
+     *
+     *  @param initialVelocity The initial velocity in meters per second
+     *  @param finalVelocity The final velocity in meters per second
+     *  @param driveBackwards will change the config to drive the robot backwards
+     * 
+     *  @return TrajectoryConfig An object required to use TrajectoryGenerator
+     */
+    private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity, boolean driveBackwards) {
+        return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity).setReversed(driveBackwards);
+    }
 
 }
