@@ -147,14 +147,7 @@ public class RamseteCommandMerge extends CommandBase {
         var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
 
 
-        double leftFeedforward =
-                    m_feedforward.calculate(leftSpeedSetpoint,
-                            (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
-        double rightFeedforward =
-                m_feedforward.calculate(rightSpeedSetpoint,
-                        (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
-
-        m_driveSubsystem.tankDriveVelocities(leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward);
+        m_driveSubsystem.tankDriveVelocities(leftSpeedSetpoint, rightSpeedSetpoint);
 
         m_prevTime = curTime;
         m_prevSpeeds = targetWheelSpeeds;

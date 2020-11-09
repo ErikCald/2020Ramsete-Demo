@@ -157,7 +157,14 @@ public class DriveSubsystem extends SubsystemBase {
         // Update the odometry in the periodic block
         updateOdometry();
 
-        // System.out.println("get current pose: " + getPose().toString());
+        double ticksPer100msToMetresPerSecond= 4096/(10*Math.PI*0.1524);
+        
+        double leftMeasuredVelocity = -leftMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
+        double rightMeasuredVelocity = -rightMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
+
+        leftMeasurement.setNumber(leftMeasuredVelocity);
+        rightMeasurement.setNumber(rightMeasuredVelocity);
+        
         
     }
 
@@ -245,9 +252,14 @@ public class DriveSubsystem extends SubsystemBase {
         //^*m_drive.arcadeDrive(fwd, rot);
     }
 
-    public void setControlMode() {
-        leftMaster.set(ControlMode.PercentOutput, 0);
-        rightMaster.set(ControlMode.PercentOutput, 0);
+    /**
+     * Controls the left and right sides of the drivetrain with voltages.
+     * @param leftVolts the command left output
+     * @param rightVolts the commanded right output
+     */
+    public void tankDriveVolts(double leftVolts, double rightVolts) {
+        leftMaster.set(ControlMode.Current, leftVolts);
+        rightMaster.set(ControlMode.Current, rightVolts);
     }
 
     /**
@@ -258,11 +270,9 @@ public class DriveSubsystem extends SubsystemBase {
      * @param leftVelocity the commanded left output
      * @param rightVelocity the commanded right output
      */
-    public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
-        leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity), DemandType.ArbitraryFeedForward,
-                leftFeedforward / 12.0);  // / Constants.kMaxSpeedMetersPerSecond (leftVelocity * 4096) / (10 * Math.PI * 0.1524)
-        rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity), DemandType.ArbitraryFeedForward,
-                rightFeedforward / 12.0);
+    public void tankDriveVelocities(double leftVelocity, double rightVelocity) {
+        leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity));  // / Constants.kMaxSpeedMetersPerSecond (leftVelocity * 4096) / (10 * Math.PI * 0.1524)
+        rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity));
 
         double ticksPer100msToMetresPerSecond= 4096/(10*Math.PI*0.1524);
         
@@ -285,19 +295,6 @@ public class DriveSubsystem extends SubsystemBase {
 
         //System.out.printf("     tankDriveVelocoties output: LV: %.2f, RV: %.2f, LF: %.2f, RF: %.2f   \n", leftVelocity, rightVelocity, leftFeedforward/12, rightFeedforward/12);
 
-        /**
-         * The code example is from this post:
-         * https://www.chiefdelphi.com/t/falcon-500-closed-loop-velocity/378170/18
-         * 
-         * Super helpful example code to include the simpleMotorForward
-         * falconMotor.set(
-         * ControlMode.Velocity,
-         * velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
-         * DemandType.ArbitraryFeedForward,
-         * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
-         * );
-         * 
-         */
     }
 
     /**

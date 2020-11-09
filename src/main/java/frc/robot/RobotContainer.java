@@ -75,16 +75,13 @@ public class RobotContainer {
      */
     private void configureButtonBindings() {
 
-        SimpleMotorFeedforward testFF = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter);
-        double testFFValue = testFF.calculate(3)/12;
         Command test = new RunCommand(
-            () -> m_robotDrive.tankDriveVelocities(3, 3, testFFValue, testFFValue),
+            () -> m_robotDrive.tankDriveVelocities(1, 1),
             m_robotDrive
         );
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
             .whenHeld(test)
-            .whenReleased(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
+            .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
 
     }
 
@@ -141,12 +138,14 @@ public class RobotContainer {
         m_robotDrive.zeroHeading();
         m_robotDrive.resetOdometry(new Pose2d(0, 0, new Rotation2d(0)));
 
-        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(driveForwardTrajectory, m_robotDrive);
+        RamseteCommand ramseteCommand = newRamseteCommand(driveForwardTrajectory);
+
+        RamseteCommandMerge ramseteCommandMerge = new RamseteCommandMerge(driveForwardTrajectory, m_robotDrive);
 
         
 
         // Run path following command, then stop at the end.
-        return ramseteCommand.andThen(() -> m_robotDrive.setControlMode());       //tankDriveVelocities(0, 0, 0, 0));
+        return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVolts(0, 0));       //tankDriveVelocities(0, 0, 0, 0));
 
     }
 
@@ -213,6 +212,20 @@ public class RobotContainer {
      */
     private TrajectoryConfig getConfig(double initialVelocity, double finalVelocity, boolean driveBackwards) {
         return defaultConfig.setStartVelocity(initialVelocity).setEndVelocity(finalVelocity).setReversed(driveBackwards);
+    }
+
+
+
+    /**
+     * Create a new Ramsete Command with a given Trajectory object
+     * 
+     * 
+     */
+    private RamseteCommand newRamseteCommand(Trajectory trajectory) {
+        return new RamseteCommand(trajectory, m_robotDrive::getPose,
+            new loggingRamseteController(Constants.kRamseteB, Constants.kRamseteZeta),
+            Constants.kDriveKinematics,
+            m_robotDrive::tankDriveVelocities, m_robotDrive);
     }
 
 }
