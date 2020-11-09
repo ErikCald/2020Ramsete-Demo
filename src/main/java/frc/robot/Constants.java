@@ -38,11 +38,11 @@ public class Constants {
     public static final double LEFT_DRIVE_PID_D = 0.0;
 
     public static final double RIGHT_DRIVE_PID_F = 0.0;
-    public static final double RIGHT_DRIVE_PID_P = 0.0101d; // Value of 2020 robot : 0.018d
+    public static final double RIGHT_DRIVE_PID_P = 0.0101d; // Value of 2020 robot : 0.018d, 
     public static final double RIGHT_DRIVE_PID_D = 0.0;
 
 
-    public static final double kTrackwidthMeters = 0.69; //CAD Measured TW: 0.69, experimentaly TW: 0.583 
+    public static final double kTrackwidthMeters = 0.583; //CAD Measured TW: 0.69, experimentaly TW: 0.583 
     public static final DifferentialDriveKinematics kDriveKinematics =
         new DifferentialDriveKinematics(kTrackwidthMeters);
 
@@ -72,10 +72,10 @@ public class Constants {
     /** 
     * Auto Constants
      */
-    public static final double kMaxSpeedMetersPerSecond = 3;  // Measured with alot of inaccuracy: 3
+    public static final double kMaxSpeedMetersPerSecond = 2;  // Measured with alot of inaccuracy: 3
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;
 
     // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
-    public static final double kRamseteB = 2;
+    public static final double kRamseteB = 2.0;
     public static final double kRamseteZeta = 0.7;
 }

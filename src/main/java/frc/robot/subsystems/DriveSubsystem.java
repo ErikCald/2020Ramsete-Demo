@@ -24,6 +24,11 @@ import com.ctre.phoenix.motorcontrol.DemandType;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
 
+import edu.wpi.first.networktables.NetworkTable;
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
+
 public class DriveSubsystem extends SubsystemBase {
 
     // Differential Drive
@@ -46,6 +51,9 @@ public class DriveSubsystem extends SubsystemBase {
     // DriveSubsystem is a singleton class as it represents a physical subsystem
     private static DriveSubsystem currentInstance;
 
+    //Network Tables
+    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement, leftDelta, rightDelta;
+    
     /**
      * Creates a new DriveSubsystem.
      */
@@ -61,7 +69,10 @@ public class DriveSubsystem extends SubsystemBase {
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
         leftMaster.configFactoryDefault();
         rightMaster.configFactoryDefault();
-        
+        leftSlave.configFactoryDefault();
+        rightSlave.configFactoryDefault();
+
+
         // leftMaster.setInverted(true);
         // leftSlave.setInverted(true);
         rightMaster.setInverted(true);
@@ -86,10 +97,10 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
         // Voltage Compensation will account for the drop in battery voltage as the match goes on.
-        leftMaster.enableVoltageCompensation(true);
-        rightMaster.enableVoltageCompensation(true);
+        // leftMaster.enableVoltageCompensation(true);
+        // rightMaster.enableVoltageCompensation(true);
 
-        m_drive = new DifferentialDrive(leftMaster, rightMaster);
+        //m_drive = new DifferentialDrive(leftMaster, rightMaster);
 
         // All Pigeon setup and methods copied from frc2706-2020-DriveBase2020
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/DriveBase2020.java
@@ -100,6 +111,23 @@ public class DriveSubsystem extends SubsystemBase {
         zeroEncoders();
         m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getCurrentHeading()));
 
+
+        // // Network Tables
+        // NetworkTableInstance networkTableInstance = NetworkTableInstance.getDefault();
+        
+
+
+        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
+        m_xEntry = table.getEntry("X");
+        m_yEntry = table.getEntry("Y");
+
+        leftReference = table.getEntry("left_reference");
+        leftMeasurement = table.getEntry("left_measurement");
+        rightReference = table.getEntry("right_reference");
+        rightMeasurement = table.getEntry("right_measurement");
+
+        leftDelta = table.getEntry("left_delta");
+        rightDelta = table.getEntry("left_delta");
     }
 
     /**
@@ -140,7 +168,10 @@ public class DriveSubsystem extends SubsystemBase {
         m_odometry.update(Rotation2d.fromDegrees(getCurrentHeading()), getLeftEncoderPosistion(),
                 getRightEncoderPosistion());
 
-        
+        var translation = m_odometry.getPoseMeters().getTranslation();
+        m_xEntry.setNumber(translation.getX());
+        m_yEntry.setNumber(translation.getY());
+
        //System.out.printf("------Left/Right Encoder: %d  /  %d,   Left/Right Side in Meters: %.4f  /  %.4f   \n", leftMaster.getSelectedSensorPosition(), rightMaster.getSelectedSensorPosition(), getLeftEncoderPosistion(), getRightEncoderPosistion()); //getPose().toString()
     }
 
@@ -160,7 +191,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getLeftEncoderPosistion() {
-        return (leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.15*Math.PI);
+        return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
     }
 
     /**
@@ -169,7 +200,7 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getRightEncoderPosistion() {
-        return -(rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.15*Math.PI);
+        return -(rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
     }
 
 
@@ -210,7 +241,13 @@ public class DriveSubsystem extends SubsystemBase {
      * @param rot the commanded rotation
      */
     public void arcadeDrive(double fwd, double rot) {
-        m_drive.arcadeDrive(fwd, rot);
+        // -*- System.out.println("------------ARCADE DRIVE");
+        //^*m_drive.arcadeDrive(fwd, rot);
+    }
+
+    public void setControlMode() {
+        leftMaster.set(ControlMode.PercentOutput, 0);
+        rightMaster.set(ControlMode.PercentOutput, 0);
     }
 
     /**
@@ -218,16 +255,35 @@ public class DriveSubsystem extends SubsystemBase {
      *
      * REQUIRED FOR RAMSETE COMMAND
      * 
-     * @param leftVolts the commanded left output
-     * @param rightVolts the commanded right output
+     * @param leftVelocity the commanded left output
+     * @param rightVelocity the commanded right output
      */
     public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
-        leftMaster.set(ControlMode.Velocity, leftVelocity, DemandType.ArbitraryFeedForward,
-                leftFeedforward / 12.0);
-        rightMaster.set(ControlMode.Velocity, rightVelocity, DemandType.ArbitraryFeedForward,
+        leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity), DemandType.ArbitraryFeedForward,
+                leftFeedforward / 12.0);  // / Constants.kMaxSpeedMetersPerSecond (leftVelocity * 4096) / (10 * Math.PI * 0.1524)
+        rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity), DemandType.ArbitraryFeedForward,
                 rightFeedforward / 12.0);
 
-        System.out.printf("------ tankDriveVelocoties output: LV: %.2f, RV: %.2f, LF: %.2f, RF: %.2f, CurrectPose: %s   \n", leftVelocity, rightVelocity, leftFeedforward/12, rightFeedforward/12, getPose().toString());
+        double ticksPer100msToMetresPerSecond= 4096/(10*Math.PI*0.1524);
+        
+        double leftMeasuredVelocity = -leftMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
+        double rightMeasuredVelocity = -rightMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
+
+        leftMeasurement.setNumber(leftMeasuredVelocity);
+        leftReference.setNumber(leftVelocity);
+        leftDelta.setNumber(leftVelocity-leftMeasuredVelocity);
+
+        rightMeasurement.setNumber(rightMeasuredVelocity);
+        rightReference.setNumber(rightVelocity);
+        rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
+
+
+        // leftMaster.set(ControlMode.Velocity, (leftVelocity * 4096) / (10 * Math.PI * 0.1524), DemandType.ArbitraryFeedForward,
+        //         leftFeedforward / 12.0);  
+        // rightMaster.set(ControlMode.Velocity, (leftVelocity * 4096) / (10 * Math.PI * 0.1524), DemandType.ArbitraryFeedForward,
+        //         rightFeedforward / 12.0);
+
+        //System.out.printf("     tankDriveVelocoties output: LV: %.2f, RV: %.2f, LF: %.2f, RF: %.2f   \n", leftVelocity, rightVelocity, leftFeedforward/12, rightFeedforward/12);
 
         /**
          * The code example is from this post:
@@ -257,5 +313,22 @@ public class DriveSubsystem extends SubsystemBase {
      */
     public void zeroHeading() {
         pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
+    }
+
+
+
+    /**
+     * Converting m/s to talon ticks/100ms
+     * 
+     * Unit Conversion Method
+     */
+    private double metersPerSecondToTalonVelocity(double metersPerSecond) {
+        double result = metersPerSecond;
+        double circumference = Math.PI * (0.1524);    // Pi*Diameter
+        double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
+        result = result * ticksPerMeter;   // Meters Per Second * ticks per 1 meter
+        result = result * 0.1;    // Converting ticks per second to ticks per 100ms
+
+        return result;
     }
 }
