@@ -75,8 +75,11 @@ public class RobotContainer {
      */
     private void configureButtonBindings() {
 
+        SimpleMotorFeedforward testFF = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
+                Constants.kaVoltSecondsSquaredPerMeter);
+        double testFFValue = testFF.calculate(3)/12;
         Command test = new RunCommand(
-            () -> m_robotDrive.tankDriveVelocities(500, 500, 50, 50),
+            () -> m_robotDrive.tankDriveVelocities(3, 3, testFFValue, testFFValue),
             m_robotDrive
         );
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
@@ -110,7 +113,7 @@ public class RobotContainer {
                 List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 1 meters straight ahead of where we started, facing forward
-                new Pose2d(1, 0, new Rotation2d(0))),
+                new Pose2d(1.5, 0, new Rotation2d(0))),
                 // Pass config
                 getConfig()); 
 
@@ -119,19 +122,31 @@ public class RobotContainer {
                 List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 90 degrees clockwise in the same location
-                new Pose2d(1, 0, Rotation2d.fromDegrees(90))),
+                new Pose2d(2, 0, Rotation2d.fromDegrees(90))),
                 // Pass config
                 getConfig());
         
+        Trajectory turnOnTheSpot2Trajectory = TrajectoryGenerator.generateTrajectory(
+            new Pose2d(0, 0, new Rotation2d(0)),
+            List.of(),
+            new Pose2d(0.01, 0, Rotation2d.fromDegrees(90)),
+            getConfig());
+
+        Trajectory forwardAndRightTraj = TrajectoryGenerator.generateTrajectory(
+            new Pose2d(0, 0, new Rotation2d(0)),
+            List.of(new Translation2d(0.5, 0.5), new Translation2d(1.5, 0.5)),
+            new Pose2d(2, 0.5, Rotation2d.fromDegrees(0)),
+            getConfig());
+
         m_robotDrive.zeroHeading();
         m_robotDrive.resetOdometry(new Pose2d(0, 0, new Rotation2d(0)));
 
-        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(driveForwardTrajectory);
+        RamseteCommandMerge ramseteCommand = new RamseteCommandMerge(driveForwardTrajectory, m_robotDrive);
 
         
 
         // Run path following command, then stop at the end.
-        return ramseteCommand.andThen(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
+        return ramseteCommand.andThen(() -> m_robotDrive.setControlMode());       //tankDriveVelocities(0, 0, 0, 0));
 
     }
 
@@ -145,7 +160,7 @@ public class RobotContainer {
         var autoVoltageConstraint = new DifferentialDriveVoltageConstraint(
                 new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
                 Constants.kaVoltSecondsSquaredPerMeter),
-                Constants.kDriveKinematics, 8);
+                Constants.kDriveKinematics, 10);
 
         return new TrajectoryConfig(Constants.kMaxSpeedMetersPerSecond,
                         Constants.kMaxAccelerationMetersPerSecondSquared)
