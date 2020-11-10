@@ -133,6 +133,13 @@ public class DriveSubsystem extends SubsystemBase {
 
         leftDelta = table.getEntry("left_delta");
         rightDelta = table.getEntry("left_delta");
+
+        leftVoltage = table.getEntry("leftVoltage");
+        rightVoltage = table.getEntry("rightVoltage");
+        busVoltage = table.getEntry("busVoltage");
+
+        leftPosistion = table.getEntry("LeftPosistion");
+        rightPosistion = table.getEntry("RightPosistion");
     }
 
     /**
@@ -162,6 +169,9 @@ public class DriveSubsystem extends SubsystemBase {
         // Update the odometry in the periodic block
         updateOdometry();
 
+        leftVoltage.setNumber(leftMaster.getMotorOutputVoltage());
+        rightVoltage.setNumber(rightMaster.getMotorOutputVoltage());
+        busVoltage.setNumber(leftMaster.getBusVoltage());
         // System.out.println("get current pose: " + getPose().toString());
         
     }
@@ -196,7 +206,11 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getLeftEncoderPosistion() {
-        return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        double encoderTicks = filterEncoderPosData(leftMaster.getSelectedSensorPosition());
+        leftPosistion.setNumber(encoderTicks);
+        return -(talonPosistionToMeters(leftMaster.getSelectedSensorPosition()));
+
+        // return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
     }
 
     /**
@@ -205,9 +219,19 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getRightEncoderPosistion() {
-        return -(rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        double encoderTicks = filterEncoderPosData(rightMaster.getSelectedSensorPosition());
+        rightPosistion.setNumber(encoderTicks);
+        return -(talonPosistionToMeters(rightMaster.getSelectedSensorPosition()));
     }
 
+    /**
+     * Filter Encoder posisiton data 
+     * 
+     * @return Filtered Encoder posisiton data
+     */
+    private double filterEncoderPosData(double encoderData) {
+        return encoderData * 1.0341d;
+    }
 
     /**
      * Returns true if the pigeon has been defined
@@ -340,13 +364,15 @@ public class DriveSubsystem extends SubsystemBase {
      * Unit Conversion Method
      */
     private double metersPerSecondToTalonVelocity(double metersPerSecond) {
-        double result = metersPerSecond;
-        double circumference = Math.PI * (0.1524);    // Pi*Diameter
-        double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
-        result = result * ticksPerMeter;   // Meters Per Second * ticks per 1 meter
-        result = result * 0.1;    // Converting ticks per second to ticks per 100ms
+        // double result = metersPerSecond;
+        // double circumference = Math.PI * (0.1524);    // Pi*Diameter
+        // double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
+        // result = result * ticksPerMeter;   // Meters Per Second * ticks per 1 meter
+        // result = result * 0.1;    // Converting ticks per second to ticks per 100ms
 
-        return result;
+        // return result;
+
+        return metersToTalonPosistion(metersPerSecond * 0.1); // Converting meters per second to meters per 100ms
     }
 
     /**
@@ -355,13 +381,39 @@ public class DriveSubsystem extends SubsystemBase {
      * Unit Conversion Method
      */
     private double talonVelocityToMetersPerSecond(double talonVelocity) {
-        double result = talonVelocity;
-        result = result*10; //Convert ticks/100ms to ticks/sec
+        // double result = talonVelocity;
+        // result = result*10; //Convert ticks/100ms to ticks/sec
 
+        // double circumference = Math.PI * 0.1524;
+
+        // double metersPerTick = circumference/4096;
+        // result = result * metersPerTick;
+        // return result;
+    
+        return talonPosistionToMeters(talonVelocity * 10); // Convert ticks/100ms to ticks/sec
+    }
+    
+    /**
+     * Converting Talon ticks to m/s
+     * 
+     * Unit Conversion Method
+     */
+    private double talonPosistionToMeters(double talonPosisiton) {
+       // (rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+
+        double result = talonPosisiton;
         double circumference = Math.PI * 0.1524;
+        double metersPerTick = circumference / 4096;
+        result *= metersPerTick;
+        return result;
 
-        double metersPerTick = circumference/4096;
-        result = result * metersPerTick;
+    }
+
+    private double metersToTalonPosistion(double meters) {
+        double result = meters;
+        double circumference = Math.PI * (0.1524);    // Pi*Diameter
+        double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
+        result = result * ticksPerMeter;   // Meter * ticks per 1 meter
         return result;
     }
 
