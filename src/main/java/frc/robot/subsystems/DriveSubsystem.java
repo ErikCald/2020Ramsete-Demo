@@ -58,7 +58,8 @@ public class DriveSubsystem extends SubsystemBase {
     
     //Network Tables
     NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
-                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion;
+                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion,
+                leftFeedforwardVolts, rightFeedforwardVolts;
     /**
      * Creates a new DriveSubsystem.
      */
@@ -117,11 +118,6 @@ public class DriveSubsystem extends SubsystemBase {
         m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getCurrentHeading()));
 
 
-        // // Network Tables
-        // NetworkTableInstance networkTableInstance = NetworkTableInstance.getDefault();
-        
-
-
         var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
         m_xEntry = table.getEntry("X");
         m_yEntry = table.getEntry("Y");
@@ -134,12 +130,15 @@ public class DriveSubsystem extends SubsystemBase {
         leftDelta = table.getEntry("left_delta");
         rightDelta = table.getEntry("left_delta");
 
-        leftVoltage = table.getEntry("leftVoltage");
-        rightVoltage = table.getEntry("rightVoltage");
+        leftVoltage = table.getEntry("leftMotorVoltage");
+        rightVoltage = table.getEntry("rightMotorVoltage");
         busVoltage = table.getEntry("busVoltage");
 
         leftPosistion = table.getEntry("LeftPosistion");
         rightPosistion = table.getEntry("RightPosistion");
+
+        leftFeedforwardVolts = table.getEntry("leftFeedforwardVolts");
+        rightFeedforwardVolts = table.getEntry("rightFeedforwardVolts");
     }
 
     /**
@@ -299,10 +298,12 @@ public class DriveSubsystem extends SubsystemBase {
         leftMeasurement.setNumber(leftMeasuredVelocity);
         leftReference.setNumber(leftVelocity);
         leftDelta.setNumber(leftVelocity-leftMeasuredVelocity);
+        leftFeedforwardVolts.setNumber(leftFeedforward);
 
         rightMeasurement.setNumber(rightMeasuredVelocity);
         rightReference.setNumber(rightVelocity);
         rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
+        rightFeedforwardVolts.setNumber(rightFeedforward);
 
         /**
          * The code example is from this post:

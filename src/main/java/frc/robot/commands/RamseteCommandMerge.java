@@ -132,7 +132,6 @@ public class RamseteCommandMerge extends CommandBase {
         double dt = curTime - m_prevTime;
 
         Pose2d CURRENTPOSE = m_driveSubsystem.getPose();
-        //System.out.printf(CURRENTPOSE.toString());
         Trajectory.State DESIREDSTATE = m_trajectory.sample(curTime);
         Pose2d poseError = DESIREDSTATE.poseMeters.relativeTo(CURRENTPOSE);
         xError.setNumber(poseError.getTranslation().getX());
