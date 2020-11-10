@@ -207,7 +207,7 @@ public class DriveSubsystem extends SubsystemBase {
     private double getLeftEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(leftMaster.getSelectedSensorPosition());
         leftPosistion.setNumber(encoderTicks);
-        return -(talonPosistionToMeters(leftMaster.getSelectedSensorPosition()));
+        return -(talonPosistionToMeters(encoderTicks));
 
         // return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
     }
@@ -220,7 +220,7 @@ public class DriveSubsystem extends SubsystemBase {
     private double getRightEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(rightMaster.getSelectedSensorPosition());
         rightPosistion.setNumber(encoderTicks);
-        return -(talonPosistionToMeters(rightMaster.getSelectedSensorPosition()));
+        return -(talonPosistionToMeters(encoderTicks));
     }
 
     /**
