@@ -52,7 +52,8 @@ public class DriveSubsystem extends SubsystemBase {
     private static DriveSubsystem currentInstance;
 
     //Network Tables
-    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement, leftDelta, rightDelta;
+    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
+                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion;
     
     /**
      * Creates a new DriveSubsystem.
@@ -128,6 +129,13 @@ public class DriveSubsystem extends SubsystemBase {
 
         leftDelta = table.getEntry("left_delta");
         rightDelta = table.getEntry("left_delta");
+
+        leftVoltage = table.getEntry("leftVoltage");
+        rightVoltage = table.getEntry("rightVoltage");
+        busVoltage = table.getEntry("busVoltage");
+
+        leftPosistion = table.getEntry("LeftPosistion");
+        rightPosistion = table.getEntry("RightPosistion");
     }
 
     /**
@@ -164,6 +172,11 @@ public class DriveSubsystem extends SubsystemBase {
 
         leftMeasurement.setNumber(leftMeasuredVelocity);
         rightMeasurement.setNumber(rightMeasuredVelocity);
+
+        leftVoltage.setNumber(leftMaster.getMotorOutputVoltage());
+        rightVoltage.setNumber(rightMaster.getMotorOutputVoltage());
+        busVoltage.setNumber(leftMaster.getBusVoltage());
+
         
         
     }
@@ -198,7 +211,9 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getLeftEncoderPosistion() {
-        return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        double encoderTicks = filterEncoderPosData(leftMaster.getSelectedSensorPosition());
+        leftPosistion.setNumber(encoderTicks);
+        return -(encoderTicks / 4096.0d) * (0.1524*Math.PI);
     }
 
     /**
@@ -207,7 +222,18 @@ public class DriveSubsystem extends SubsystemBase {
      * @return Encoder posistion value 
      */
     private double getRightEncoderPosistion() {
-        return -(rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        double encoderTicks = filterEncoderPosData(rightMaster.getSelectedSensorPosition());
+        rightPosistion.setNumber(encoderTicks);
+        return -(encoderTicks / 4096.0d) * (0.1524*Math.PI);
+    }
+
+    /**
+     * Encoder Posistion Filter
+     * 
+     * @return Filtered Encoder Posistion
+     */
+    private double filterEncoderPosData(double encoderPos) {
+        return encoderPos * 1.0341d;  //1.00397246
     }
 
 
@@ -327,5 +353,37 @@ public class DriveSubsystem extends SubsystemBase {
         result = result * 0.1;    // Converting ticks per second to ticks per 100ms
 
         return result;
+    }
+
+    /**
+     * Converting talon ticks/100ms to m/s
+     * 
+     * Unit Conversion Method
+     */
+    private double talonVelocityToMetersPerSecond(double talonVelocity) {
+        double result = talonVelocity;
+        result = result*10; //Convert ticks/100ms to ticks/sec
+
+        double circumference = Math.PI * 0.1524;
+
+        double metersPerTick = circumference/4096;
+        result = result * metersPerTick;
+        return result;
+    }
+
+
+    /**
+     * Set FPD values
+     */
+    public void setDrivetrainFPD(double kF, double kP, double kD) {
+        leftMaster.config_kF(kPIDLoopIdx, kF, kTimeoutMs);
+        leftMaster.config_kP(kPIDLoopIdx, kP, kTimeoutMs);
+        leftMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
+        leftMaster.config_kD(kPIDLoopIdx, kD, kTimeoutMs);
+
+        rightMaster.config_kF(kPIDLoopIdx, kF, kTimeoutMs);
+        rightMaster.config_kP(kPIDLoopIdx, kP, kTimeoutMs);
+        rightMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
+        rightMaster.config_kD(kPIDLoopIdx, kD, kTimeoutMs);
     }
 }

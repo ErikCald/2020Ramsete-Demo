@@ -33,11 +33,11 @@ public class Constants {
     public static final int CAN_TIMEOUT_SHORT = 10;
     public static final int CAN_TIMEOUT_LONG = 100;
 
-    public static final double LEFT_DRIVE_PID_F = 0.0;
+    public static final double LEFT_DRIVE_PID_F = 0.375;
     public static final double LEFT_DRIVE_PID_P = 0.0101d;   // Robot Characterization Measured value: 0.0101
     public static final double LEFT_DRIVE_PID_D = 0.0;
 
-    public static final double RIGHT_DRIVE_PID_F = 0.0;
+    public static final double RIGHT_DRIVE_PID_F = 0.375;
     public static final double RIGHT_DRIVE_PID_P = 0.0101d; // Value of 2020 robot : 0.018d, 
     public static final double RIGHT_DRIVE_PID_D = 0.0;
 
@@ -72,7 +72,7 @@ public class Constants {
     /** 
     * Auto Constants
      */
-    public static final double kMaxSpeedMetersPerSecond = 2;  // Measured with alot of inaccuracy: 3
+    public static final double kMaxSpeedMetersPerSecond = 1.5;  // Measured with alot of inaccuracy: 3
     public static final double kMaxAccelerationMetersPerSecondSquared = 3;
 
     // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
