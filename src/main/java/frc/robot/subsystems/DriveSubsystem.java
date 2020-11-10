@@ -40,6 +40,10 @@ public class DriveSubsystem extends SubsystemBase {
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
 
+    // Duplicate of SimpleMotorFeedforward meant to be used for testing 
+    SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
+                Constants.kaVoltSecondsSquaredPerMeter);
+
     // Odometry class for tracking robot pose
     private final DifferentialDriveOdometry m_odometry;
     private SimpleMotorFeedforward motorFeedForward;
@@ -51,9 +55,10 @@ public class DriveSubsystem extends SubsystemBase {
     // DriveSubsystem is a singleton class as it represents a physical subsystem
     private static DriveSubsystem currentInstance;
 
-    //Network Tables
-    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement, leftDelta, rightDelta;
     
+    //Network Tables
+    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
+                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion;
     /**
      * Creates a new DriveSubsystem.
      */
@@ -260,14 +265,12 @@ public class DriveSubsystem extends SubsystemBase {
      */
     public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
         leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity), DemandType.ArbitraryFeedForward,
-                leftFeedforward / 12.0);  // / Constants.kMaxSpeedMetersPerSecond (leftVelocity * 4096) / (10 * Math.PI * 0.1524)
+                leftFeedforward / 12.0);
         rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity), DemandType.ArbitraryFeedForward,
                 rightFeedforward / 12.0);
-
-        double ticksPer100msToMetresPerSecond= 4096/(10*Math.PI*0.1524);
         
-        double leftMeasuredVelocity = -leftMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
-        double rightMeasuredVelocity = -rightMaster.getSelectedSensorVelocity() / ticksPer100msToMetresPerSecond;
+        double leftMeasuredVelocity = -(talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity()));
+        double rightMeasuredVelocity = -(talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity()));
 
         leftMeasurement.setNumber(leftMeasuredVelocity);
         leftReference.setNumber(leftVelocity);
@@ -276,14 +279,6 @@ public class DriveSubsystem extends SubsystemBase {
         rightMeasurement.setNumber(rightMeasuredVelocity);
         rightReference.setNumber(rightVelocity);
         rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
-
-
-        // leftMaster.set(ControlMode.Velocity, (leftVelocity * 4096) / (10 * Math.PI * 0.1524), DemandType.ArbitraryFeedForward,
-        //         leftFeedforward / 12.0);  
-        // rightMaster.set(ControlMode.Velocity, (leftVelocity * 4096) / (10 * Math.PI * 0.1524), DemandType.ArbitraryFeedForward,
-        //         rightFeedforward / 12.0);
-
-        //System.out.printf("     tankDriveVelocoties output: LV: %.2f, RV: %.2f, LF: %.2f, RF: %.2f   \n", leftVelocity, rightVelocity, leftFeedforward/12, rightFeedforward/12);
 
         /**
          * The code example is from this post:
@@ -298,6 +293,28 @@ public class DriveSubsystem extends SubsystemBase {
          * );
          * 
          */
+    }
+    /**
+     * Controls the left and right side of the drivetrain in meters per second
+     * 
+     * This parameter set is less accurate and calculates feedforward values assuming your acceleration is 0.
+     * Purpose is to use this for testing.
+     * 
+     * @param leftVelocity
+     * @param rightVelocity
+     */
+    public void tankDriveVelocities(double leftVelocity, double rightVelocity) {
+        double leftFF = feedforward.calculate(leftVelocity);
+        double rightFF = feedforward.calculate(rightVelocity);
+
+        tankDriveVelocities(leftVelocity, rightVelocity, leftFF, rightFF);
+
+
+    }
+
+    public void tankDriveVolts(double leftVolts, double rightVolts) {
+        leftMaster.set(ControlMode.Current, leftVolts);
+        rightMaster.set(ControlMode.Current, rightVolts);
     }
 
     /**
@@ -331,4 +348,37 @@ public class DriveSubsystem extends SubsystemBase {
 
         return result;
     }
+
+    /**
+     * Converting talon ticks/100ms to m/s
+     * 
+     * Unit Conversion Method
+     */
+    private double talonVelocityToMetersPerSecond(double talonVelocity) {
+        double result = talonVelocity;
+        result = result*10; //Convert ticks/100ms to ticks/sec
+
+        double circumference = Math.PI * 0.1524;
+
+        double metersPerTick = circumference/4096;
+        result = result * metersPerTick;
+        return result;
+    }
+
+
+    /**
+     * Set FPD values
+     */
+    public void setDrivetrainFPD(double kF, double kP, double kD) {
+        leftMaster.config_kF(kPIDLoopIdx, kF, kTimeoutMs);
+        leftMaster.config_kP(kPIDLoopIdx, kP, kTimeoutMs);
+        leftMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
+        leftMaster.config_kD(kPIDLoopIdx, kD, kTimeoutMs);
+
+        rightMaster.config_kF(kPIDLoopIdx, kF, kTimeoutMs);
+        rightMaster.config_kP(kPIDLoopIdx, kP, kTimeoutMs);
+        rightMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
+        rightMaster.config_kD(kPIDLoopIdx, kD, kTimeoutMs);
+    }
 }
+

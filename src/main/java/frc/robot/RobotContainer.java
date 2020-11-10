@@ -31,6 +31,9 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
+import edu.wpi.first.networktables.NetworkTableEntry;
+import edu.wpi.first.networktables.NetworkTableInstance;
+
 /**
  * This class is where the bulk of the robot should be declared. Since
  * Command-based is a "declarative" paradigm, very little robot logic should
@@ -47,6 +50,9 @@ public class RobotContainer {
 
     // Default Trajectory Config
     TrajectoryConfig defaultConfig;
+
+    //Network Tables
+    NetworkTableEntry driveKF, driveKP, driveKD;
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -65,6 +71,16 @@ public class RobotContainer {
 
 
 
+
+        var table = NetworkTableInstance.getDefault().getTable("drivetrainTuning");
+        driveKF = table.getEntry("driveKF");
+        driveKP = table.getEntry("driveKP");
+        driveKD = table.getEntry("driveKD");
+        
+        driveKF.setNumber(Constants.RIGHT_DRIVE_PID_F);
+        driveKP.setNumber(Constants.RIGHT_DRIVE_PID_P);
+        driveKD.setNumber(Constants.RIGHT_DRIVE_PID_D);  
+
     }
 
     /**
@@ -75,16 +91,37 @@ public class RobotContainer {
      */
     private void configureButtonBindings() {
 
-        SimpleMotorFeedforward testFF = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter);
-        double testFFValue = testFF.calculate(3)/12;
-        Command test = new RunCommand(
-            () -> m_robotDrive.tankDriveVelocities(3, 3, testFFValue, testFFValue),
+        Command tankDriveVelocity1 = new RunCommand(
+            () -> m_robotDrive.tankDriveVelocities(0.5, 0.5),
             m_robotDrive
         );
+        new JoystickButton(m_driverController, XboxController.Button.kY.value)
+            .whenHeld(tankDriveVelocity1)
+            .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
+
+        Command tankDriveVelocity2 = new RunCommand(
+        () -> m_robotDrive.tankDriveVelocities(1, 1),
+        m_robotDrive);
         new JoystickButton(m_driverController, XboxController.Button.kB.value)
-            .whenHeld(test)
-            .whenReleased(() -> m_robotDrive.tankDriveVelocities(0, 0, 0, 0));
+            .whenHeld(tankDriveVelocity2)
+            .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
+
+        Command tankDriveVelocity3 = new RunCommand(
+        () -> m_robotDrive.tankDriveVelocities(1.5, 1.5),
+        m_robotDrive);
+        new JoystickButton(m_driverController, XboxController.Button.kA.value)
+            .whenHeld(tankDriveVelocity3)
+            .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
+
+        Command tankDriveVelocity4 = new RunCommand(
+        () -> m_robotDrive.tankDriveVelocities(-0.5, -0.5),
+        m_robotDrive);
+        new JoystickButton(m_driverController, XboxController.Button.kX.value)
+            .whenHeld(tankDriveVelocity4)
+            .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
+
+        new JoystickButton(m_driverController, XboxController.Button.kStart.value)
+        .whenPressed(() -> m_robotDrive.setDrivetrainFPD(driveKF.getDouble(Constants.RIGHT_DRIVE_PID_F), driveKP.getDouble(Constants.RIGHT_DRIVE_PID_P), driveKD.getDouble(Constants.RIGHT_DRIVE_PID_D)));
 
     }
 
