@@ -94,10 +94,10 @@ public class RamseteCommandMerge extends CommandBase {
      *                          The idea being that vision can calculate a new updated trajectory half way
      *                          through which is more accurate.
      */
-    public RamseteCommandMerge(Trajectory trajectory, double endEarly) {
+    public RamseteCommandMerge(Trajectory trajectory, double endEarly, DriveSubsystem drivetrain) {
         m_trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
 
-        m_driveSubsystem = DriveSubsystem.getInstance();
+        m_driveSubsystem = drivetrain;  // DriveSubsystem.getInstance();
         m_follower = new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta);
         m_kinematics = Constants.kDriveKinematics;
 
@@ -106,6 +106,11 @@ public class RamseteCommandMerge extends CommandBase {
         m_endEarly = endEarly;
         
         addRequirements(m_driveSubsystem);
+        
+        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
+        xError = table.getEntry("xError");
+        yError = table.getEntry("yError");
+        rotError = table.getEntry("rotError");
     }
 
     @Override
