@@ -34,15 +34,15 @@ public class Constants {
     public static final int CAN_TIMEOUT_LONG = 100;
 
     public static final double LEFT_DRIVE_PID_F = 0.0;
-    public static final double LEFT_DRIVE_PID_P = 0.0101d;   // Robot Characterization Measured value: 0.0101
+    public static final double LEFT_DRIVE_PID_P = 0.012;   // RC1 Measured value: 0.101/10, RC2: 0.0909/10, RCL1: 0.012
     public static final double LEFT_DRIVE_PID_D = 0.0;
 
     public static final double RIGHT_DRIVE_PID_F = 0.0;
-    public static final double RIGHT_DRIVE_PID_P = 0.0101d; // Value of 2020 robot : 0.018d, 
+    public static final double RIGHT_DRIVE_PID_P = 0.012; // Value of 2020 robot : 0.018d,  
     public static final double RIGHT_DRIVE_PID_D = 0.0;
 
 
-    public static final double kTrackwidthMeters = 0.583; //CAD Measured TW: 0.69, experimentaly TW: 0.583 
+    public static final double kTrackwidthMeters = 0.6183; //CAD Measured TW: 0.69, experimentaly TW: 0.583, RC2: 0.5813, RCL1: 0.6183
     public static final DifferentialDriveKinematics kDriveKinematics =
         new DifferentialDriveKinematics(kTrackwidthMeters);
 
@@ -55,9 +55,9 @@ public class Constants {
     // for *your* robot's drive.
     // The Robot Characterization Toolsuite provides a convenient tool for obtaining these
     // values for your robot.
-    public static final double ksVolts = 1.16;
-    public static final double kvVoltSecondsPerMeter = 3.37;
-    public static final double kaVoltSecondsSquaredPerMeter = 0.573;
+    public static final double ksVolts = 1.2;    // RC1: 1.16,  RC2: 1.22,  RCL1: 1.42
+    public static final double kvVoltSecondsPerMeter = 3.4;    // RC1: 3.37  RC2: 3.13, RCL1: 3.19
+    public static final double kaVoltSecondsSquaredPerMeter = 0.5;    // RC1: 0.573  RC2: 0.476, RCL1: 0.669
 
     /**
      * IO Constants
@@ -67,8 +67,8 @@ public class Constants {
     /** 
     * Auto Constants
      */
-    public static final double kMaxSpeedMetersPerSecond = 1.5;  // Measured with alot of inaccuracy: 3
-    public static final double kMaxAccelerationMetersPerSecondSquared = 1.5;
+    public static final double kMaxSpeedMetersPerSecond = 3;  // Measured with alot of inaccuracy: 3
+    public static final double kMaxAccelerationMetersPerSecondSquared = 3;
 
     // Reasonable baseline values for a RAMSETE follower in units of meters and seconds
     public static final double kRamseteB = 2.0;

@@ -15,6 +15,7 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import com.ctre.phoenix.motorcontrol.TalonSRXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
+import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
 import com.ctre.phoenix.motorcontrol.can.WPI_VictorSPX;
 import com.ctre.phoenix.motorcontrol.ControlMode;
@@ -276,6 +277,18 @@ public class DriveSubsystem extends SubsystemBase {
     public void setControlMode() {
         leftMaster.set(ControlMode.PercentOutput, 0);
         rightMaster.set(ControlMode.PercentOutput, 0);
+    }
+
+    public void setBrakeMode() {
+        tankDriveVolts(0, 0);
+        leftMaster.setNeutralMode(NeutralMode.Brake);
+        rightMaster.setNeutralMode(NeutralMode.Brake);
+    }
+
+    public void setCoastMode() {
+        tankDriveVolts(0, 0);
+        leftMaster.setNeutralMode(NeutralMode.Coast);
+        rightMaster.setNeutralMode(NeutralMode.Coast);
     }
 
     /**

@@ -123,6 +123,8 @@ public class RobotContainer {
         new JoystickButton(m_driverController, XboxController.Button.kStart.value)
         .whenPressed(() -> m_robotDrive.setDrivetrainFPD(driveKF.getDouble(Constants.RIGHT_DRIVE_PID_F), driveKP.getDouble(Constants.RIGHT_DRIVE_PID_P), driveKD.getDouble(Constants.RIGHT_DRIVE_PID_D)));
 
+        new JoystickButton(m_driverController, XboxController.Button.kBack.value)
+        .whenPressed(() -> m_robotDrive.setCoastMode());
     }
 
     /**
@@ -163,17 +165,19 @@ public class RobotContainer {
                 // Pass config
                 getConfig());
         
-        Trajectory turnOnTheSpot2Trajectory = TrajectoryGenerator.generateTrajectory(
-            new Pose2d(0, 0, new Rotation2d(0)),
-            List.of(),
-            new Pose2d(0.01, 0, Rotation2d.fromDegrees(90)),
-            getConfig());
+        // Trajectory turnOnTheSpot2Trajectory = TrajectoryGenerator.generateTrajectory(
+        //     new Pose2d(0, 0, new Rotation2d(0)),
+        //     List.of(),
+        //     new Pose2d(0.01, 0, Rotation2d.fromDegrees(40)),
+        //     getConfig());
 
         Trajectory forwardAndRightTraj = TrajectoryGenerator.generateTrajectory(
             new Pose2d(0, 0, new Rotation2d(0)),
-            List.of(new Translation2d(0.5, 0.5), new Translation2d(1.5, 0.5)),
-            new Pose2d(2, 0.5, Rotation2d.fromDegrees(0)),
+            List.of(new Translation2d(1.5, 0.5)),  //List.of(), // new Translation2d(1.5, 0.5)
+            new Pose2d(2.3, 0.5, Rotation2d.fromDegrees(0)),
             getConfig());
+
+        
 
         m_robotDrive.zeroHeading();
         m_robotDrive.resetOdometry(new Pose2d(0, 0, new Rotation2d(0)));
@@ -183,7 +187,7 @@ public class RobotContainer {
         
 
         // Run path following command, then stop at the end.
-        return ramseteCommand.andThen(() -> m_robotDrive.setControlMode());       //tankDriveVelocities(0, 0, 0, 0));
+        return ramseteCommand.andThen(() -> m_robotDrive.setBrakeMode());       //tankDriveVelocities(0, 0, 0, 0));
 
     }
 

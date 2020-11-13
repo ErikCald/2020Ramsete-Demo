@@ -82,6 +82,8 @@ public class RamseteCommandMerge extends CommandBase {
         rotError = table.getEntry("rotError");
 
 
+
+
     }
 
     /**
@@ -166,13 +168,13 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        // -*- System.out.println("RamseteCommandMerge has ended");
+        System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
         m_timer.stop();
         System.out.println(m_driveSubsystem.getPose().toString());
     }
 
     @Override
     public boolean isFinished() {
-        return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds() * m_endEarly);
+        return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds()); //  * m_endEarly
     }
 }
