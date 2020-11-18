@@ -25,9 +25,9 @@ import com.ctre.phoenix.motorcontrol.DemandType;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
 
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
+// *- import edu.wpi.first.networktables.NetworkTable;
+// *- import edu.wpi.first.networktables.NetworkTableEntry;
+// *- import edu.wpi.first.networktables.NetworkTableInstance;
 
 
 public class DriveSubsystem extends SubsystemBase {
@@ -58,9 +58,9 @@ public class DriveSubsystem extends SubsystemBase {
 
     
     //Network Tables
-    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
-                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion,
-                leftFeedforwardVolts, rightFeedforwardVolts;
+    // *- NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
+                // leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion,
+                // leftFeedforwardVolts, rightFeedforwardVolts;
     /**
      * Creates a new DriveSubsystem.
      */
@@ -119,27 +119,27 @@ public class DriveSubsystem extends SubsystemBase {
         m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getCurrentHeading()));
 
 
-        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
-        m_xEntry = table.getEntry("X");
-        m_yEntry = table.getEntry("Y");
+        // var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
+        // m_xEntry = table.getEntry("X");
+        // m_yEntry = table.getEntry("Y");
 
-        leftReference = table.getEntry("left_reference");
-        leftMeasurement = table.getEntry("left_measurement");
-        rightReference = table.getEntry("right_reference");
-        rightMeasurement = table.getEntry("right_measurement");
+        // leftReference = table.getEntry("left_reference");
+        // leftMeasurement = table.getEntry("left_measurement");
+        // rightReference = table.getEntry("right_reference");
+        // rightMeasurement = table.getEntry("right_measurement");
 
-        leftDelta = table.getEntry("left_delta");
-        rightDelta = table.getEntry("left_delta");
+        // leftDelta = table.getEntry("left_delta");
+        // rightDelta = table.getEntry("left_delta");
 
-        leftVoltage = table.getEntry("leftMotorVoltage");
-        rightVoltage = table.getEntry("rightMotorVoltage");
-        busVoltage = table.getEntry("busVoltage");
+        // leftVoltage = table.getEntry("leftMotorVoltage");
+        // rightVoltage = table.getEntry("rightMotorVoltage");
+        // busVoltage = table.getEntry("busVoltage");
 
-        leftPosistion = table.getEntry("LeftPosistion");
-        rightPosistion = table.getEntry("RightPosistion");
+        // leftPosistion = table.getEntry("LeftPosistion");
+        // rightPosistion = table.getEntry("RightPosistion");
 
-        leftFeedforwardVolts = table.getEntry("leftFeedforwardVolts");
-        rightFeedforwardVolts = table.getEntry("rightFeedforwardVolts");
+        // leftFeedforwardVolts = table.getEntry("leftFeedforwardVolts");
+        // rightFeedforwardVolts = table.getEntry("rightFeedforwardVolts");
     }
 
     /**
@@ -169,9 +169,9 @@ public class DriveSubsystem extends SubsystemBase {
         // Update the odometry in the periodic block
         updateOdometry();
 
-        leftVoltage.setNumber(leftMaster.getMotorOutputVoltage());
-        rightVoltage.setNumber(rightMaster.getMotorOutputVoltage());
-        busVoltage.setNumber(leftMaster.getBusVoltage());
+        // leftVoltage.setNumber(leftMaster.getMotorOutputVoltage());
+        // rightVoltage.setNumber(rightMaster.getMotorOutputVoltage());
+        // busVoltage.setNumber(leftMaster.getBusVoltage());
         // System.out.println("get current pose: " + getPose().toString());
         
     }
@@ -183,9 +183,9 @@ public class DriveSubsystem extends SubsystemBase {
         m_odometry.update(Rotation2d.fromDegrees(getCurrentHeading()), getLeftEncoderPosistion(),
                 getRightEncoderPosistion());
 
-        var translation = m_odometry.getPoseMeters().getTranslation();
-        m_xEntry.setNumber(translation.getX());
-        m_yEntry.setNumber(translation.getY());
+        // var translation = m_odometry.getPoseMeters().getTranslation();
+        // m_xEntry.setNumber(translation.getX());
+        // m_yEntry.setNumber(translation.getY());
 
        //System.out.printf("------Left/Right Encoder: %d  /  %d,   Left/Right Side in Meters: %.4f  /  %.4f   \n", leftMaster.getSelectedSensorPosition(), rightMaster.getSelectedSensorPosition(), getLeftEncoderPosistion(), getRightEncoderPosistion()); //getPose().toString()
     }
@@ -207,7 +207,7 @@ public class DriveSubsystem extends SubsystemBase {
      */
     private double getLeftEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(leftMaster.getSelectedSensorPosition());
-        leftPosistion.setNumber(encoderTicks);
+        // leftPosistion.setNumber(encoderTicks);
         return -(talonPosistionToMeters(encoderTicks));
 
         // return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
@@ -220,7 +220,7 @@ public class DriveSubsystem extends SubsystemBase {
      */
     private double getRightEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(rightMaster.getSelectedSensorPosition());
-        rightPosistion.setNumber(encoderTicks);
+        // rightPosistion.setNumber(encoderTicks);
         return -(talonPosistionToMeters(encoderTicks));
     }
 
@@ -305,18 +305,18 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity), DemandType.ArbitraryFeedForward,
                 rightFeedforward / 12.0);
         
-        double leftMeasuredVelocity = -(talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity()));
-        double rightMeasuredVelocity = -(talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity()));
+        // double leftMeasuredVelocity = -(talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity()));
+        // double rightMeasuredVelocity = -(talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity()));
 
-        leftMeasurement.setNumber(leftMeasuredVelocity);
-        leftReference.setNumber(leftVelocity);
-        leftDelta.setNumber(leftVelocity-leftMeasuredVelocity);
-        leftFeedforwardVolts.setNumber(leftFeedforward);
+        // leftMeasurement.setNumber(leftMeasuredVelocity);
+        // leftReference.setNumber(leftVelocity);
+        // leftDelta.setNumber(leftVelocity-leftMeasuredVelocity);
+        // leftFeedforwardVolts.setNumber(leftFeedforward);
 
-        rightMeasurement.setNumber(rightMeasuredVelocity);
-        rightReference.setNumber(rightVelocity);
-        rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
-        rightFeedforwardVolts.setNumber(rightFeedforward);
+        // rightMeasurement.setNumber(rightMeasuredVelocity);
+        // rightReference.setNumber(rightVelocity);
+        // rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
+        // rightFeedforwardVolts.setNumber(rightFeedforward);
 
         /**
          * The code example is from this post:

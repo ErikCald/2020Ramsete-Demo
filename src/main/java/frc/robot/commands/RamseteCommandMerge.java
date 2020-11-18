@@ -24,8 +24,8 @@ import frc.robot.Constants;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 
 
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
+// *- import edu.wpi.first.networktables.NetworkTableEntry;
+// *- import edu.wpi.first.networktables.NetworkTableInstance;
 
 /**
  * This command was copied and modified from RamseteCommand on WpiLib.
@@ -54,7 +54,7 @@ public class RamseteCommandMerge extends CommandBase {
     private final DriveSubsystem m_driveSubsystem;
     private final double m_endEarly;
 
-    private NetworkTableEntry xError, yError, rotError;
+    // *- private NetworkTableEntry xError, yError, rotError;
 
     /**
      * Constructs a new RamseteCommand that, when executed, will follow the provided trajectory.
@@ -76,10 +76,10 @@ public class RamseteCommandMerge extends CommandBase {
 
         addRequirements(drivetrain);  //m_driveSubsystem
 
-        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
-        xError = table.getEntry("xError");
-        yError = table.getEntry("yError");
-        rotError = table.getEntry("rotError");
+        // var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
+        // xError = table.getEntry("xError");
+        // yError = table.getEntry("yError");
+        // rotError = table.getEntry("rotError");
 
 
 
@@ -109,16 +109,16 @@ public class RamseteCommandMerge extends CommandBase {
         
         addRequirements(m_driveSubsystem);
         
-        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
-        xError = table.getEntry("xError");
-        yError = table.getEntry("yError");
-        rotError = table.getEntry("rotError");
+        // var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
+        // xError = table.getEntry("xError");
+        // yError = table.getEntry("yError");
+        // rotError = table.getEntry("rotError");
     }
 
     @Override
     public void initialize() {
-        System.out.println("RamseteCommandMerge Initializing");
-        System.out.println(m_trajectory.toString());
+        // System.out.println("RamseteCommandMerge Initializing");
+        // System.out.println(m_trajectory.toString());
 
         // -*- System.out.println("Current Pose: " + m_driveSubsystem.getPose().toString());
 
@@ -140,10 +140,10 @@ public class RamseteCommandMerge extends CommandBase {
 
         Pose2d CURRENTPOSE = m_driveSubsystem.getPose();
         Trajectory.State DESIREDSTATE = m_trajectory.sample(curTime);
-        Pose2d poseError = DESIREDSTATE.poseMeters.relativeTo(CURRENTPOSE);
-        xError.setNumber(poseError.getTranslation().getX());
-        yError.setNumber(poseError.getTranslation().getY());
-        rotError.setNumber(poseError.getRotation().getDegrees());
+        // Pose2d poseError = DESIREDSTATE.poseMeters.relativeTo(CURRENTPOSE);
+        // xError.setNumber(poseError.getTranslation().getX());
+        // yError.setNumber(poseError.getTranslation().getY());
+        // rotError.setNumber(poseError.getRotation().getDegrees());
 
 
         var targetWheelSpeeds = m_kinematics.toWheelSpeeds(
@@ -168,9 +168,9 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
+        // System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
         m_timer.stop();
-        System.out.println(m_driveSubsystem.getPose().toString());
+        // System.out.println(m_driveSubsystem.getPose().toString());
     }
 
     @Override

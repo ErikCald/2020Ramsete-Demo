@@ -31,8 +31,8 @@ import edu.wpi.first.wpilibj2.command.StartEndCommand;
 import edu.wpi.first.wpilibj2.command.button.Button;
 import edu.wpi.first.wpilibj2.command.button.JoystickButton;
 
-import edu.wpi.first.networktables.NetworkTableEntry;
-import edu.wpi.first.networktables.NetworkTableInstance;
+// *- import edu.wpi.first.networktables.NetworkTableEntry;
+// *- import edu.wpi.first.networktables.NetworkTableInstance;
 
 /**
  * This class is where the bulk of the robot should be declared. Since
@@ -52,7 +52,7 @@ public class RobotContainer {
     TrajectoryConfig defaultConfig;
 
     //Network Tables
-    NetworkTableEntry driveKF, driveKP, driveKD;
+    // *- NetworkTableEntry driveKF, driveKP, driveKD;
 
     /**
      * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -72,14 +72,14 @@ public class RobotContainer {
 
 
 
-        var table = NetworkTableInstance.getDefault().getTable("drivetrainTuning");
-        driveKF = table.getEntry("driveKF");
-        driveKP = table.getEntry("driveKP");
-        driveKD = table.getEntry("driveKD");
+        // var table = NetworkTableInstance.getDefault().getTable("drivetrainTuning");
+        // driveKF = table.getEntry("driveKF");
+        // driveKP = table.getEntry("driveKP");
+        // driveKD = table.getEntry("driveKD");
         
-        driveKF.setNumber(Constants.RIGHT_DRIVE_PID_F);
-        driveKP.setNumber(Constants.RIGHT_DRIVE_PID_P);
-        driveKD.setNumber(Constants.RIGHT_DRIVE_PID_D);  
+        // driveKF.setNumber(Constants.RIGHT_DRIVE_PID_F);
+        // driveKP.setNumber(Constants.RIGHT_DRIVE_PID_P);
+        // driveKD.setNumber(Constants.RIGHT_DRIVE_PID_D);  
 
     }
 
@@ -120,8 +120,8 @@ public class RobotContainer {
             .whenHeld(tankDriveVelocity4)
             .whenReleased(() -> m_robotDrive.tankDriveVolts(0, 0));
 
-        new JoystickButton(m_driverController, XboxController.Button.kStart.value)
-        .whenPressed(() -> m_robotDrive.setDrivetrainFPD(driveKF.getDouble(Constants.RIGHT_DRIVE_PID_F), driveKP.getDouble(Constants.RIGHT_DRIVE_PID_P), driveKD.getDouble(Constants.RIGHT_DRIVE_PID_D)));
+        // new JoystickButton(m_driverController, XboxController.Button.kStart.value)
+        // .whenPressed(() -> m_robotDrive.setDrivetrainFPD(driveKF.getDouble(Constants.RIGHT_DRIVE_PID_F), driveKP.getDouble(Constants.RIGHT_DRIVE_PID_P), driveKD.getDouble(Constants.RIGHT_DRIVE_PID_D)));
 
         new JoystickButton(m_driverController, XboxController.Button.kBack.value)
         .whenPressed(() -> m_robotDrive.setCoastMode());
