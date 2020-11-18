@@ -152,16 +152,16 @@ public class RobotContainer {
                 List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 1 meters straight ahead of where we started, facing forward
-                new Pose2d(2, 0, new Rotation2d(0))),
+                new Pose2d(3.5, 0, new Rotation2d(0))),
                 // Pass config
-                getConfig()); 
+                getConfig(0, 1)); 
 
         Trajectory turnOnTheSpotTrajectory = TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction
                 List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 90 degrees clockwise in the same location
-                new Pose2d(2, 0, Rotation2d.fromDegrees(90))),
+                new Pose2d(4, 0, Rotation2d.fromDegrees(90))),
                 // Pass config
                 getConfig());
         
