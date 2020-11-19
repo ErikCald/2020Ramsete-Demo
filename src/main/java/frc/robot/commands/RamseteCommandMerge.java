@@ -117,8 +117,8 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void initialize() {
-        System.out.println("RamseteCommandMerge Initializing");
-        System.out.println(m_trajectory.toString());
+        // System.out.println("RamseteCommandMerge Initializing");
+        // System.out.println(m_trajectory.toString());
 
         // -*- System.out.println("Current Pose: " + m_driveSubsystem.getPose().toString());
 
@@ -153,12 +153,27 @@ public class RamseteCommandMerge extends CommandBase {
         var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
 
 
-        double leftFeedforward =
-                    m_feedforward.calculate(leftSpeedSetpoint,
-                            (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt);
-        double rightFeedforward =
+        double leftFeedforward;
+        double rightFeedforward;
+
+        double leftAcceleration = (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt;
+        double rightAcceleration = (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt;
+
+        boolean acceptAcceleration = true;
+        if (acceptAcceleration) {
+            leftFeedforward =
+                    m_feedforward.calculate(leftSpeedSetpoint, leftAcceleration);
+            rightFeedforward =
                 m_feedforward.calculate(rightSpeedSetpoint,
-                        (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt);
+                        rightAcceleration);
+
+        } else {
+            leftFeedforward = m_feedforward.calculate(leftSpeedSetpoint);
+            rightFeedforward = m_feedforward.calculate(rightSpeedSetpoint);
+        }
+        m_driveSubsystem.logRamseteData(CURRENTPOSE, DESIREDSTATE, poseError, 
+                    leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward,
+                    leftAcceleration, rightAcceleration);
 
         m_driveSubsystem.tankDriveVelocities(leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward);
 
@@ -168,9 +183,10 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void end(boolean interrupted) {
-        System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
+        // System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
+        m_driveSubsystem.stopLogging();
         m_timer.stop();
-        System.out.println(m_driveSubsystem.getPose().toString());
+        // System.out.println(m_driveSubsystem.getPose().toString());
     }
 
     @Override

@@ -15,6 +15,9 @@ import frc.robot.subsystems.DriveSubsystem;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
 
+import badlog.lib.BadLog;
+import badlog.lib.DataInferMode;
+
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
  * each mode, as described in the TimedRobot documentation. If you change the name of this class or
@@ -35,6 +38,21 @@ public class Robot extends TimedRobot {
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
+
+    
+
+
+
+
+
+    // BadLog log = BadLog.init("test.bag");
+    // BadLog.createValue("Example Value", System.getProperty("os.version"));
+    // BadLog.createTopic("Example Topic", "Bytes", () -> (double)
+    // Runtime.getRuntime().freeMemory());
+    // BadLog.createTopic("Topic with attributes", BadLog.UNITLESS, () -> 3.2,
+    // "attr1", "attr2");
+    // BadLog.createTopicSubscriber("Subscribed topic", "s", DataInferMode.DEFAULT);
+    // log.finishInitialization();q
   }
 
   /**

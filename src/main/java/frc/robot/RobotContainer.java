@@ -141,7 +141,7 @@ public class RobotContainer {
                 // Start at the origin facing the +X direction
                 new Pose2d(0, 0, new Rotation2d(0)),
                 // Pass through these two interior waypoints, making an 's' curve path
-                List.of(new Translation2d(1, 1), new Translation2d(2, -1)),
+                List.of(new Translation2d(1, 0.5), new Translation2d(2, -0.5)),
                 // End 3 meters straight ahead of where we started, facing forward
                 new Pose2d(3, 0, new Rotation2d(0)),
                 // Pass config
@@ -152,9 +152,9 @@ public class RobotContainer {
                 List.of(new Pose2d(0, 0, new Rotation2d(0)),
 
                 // End 1 meters straight ahead of where we started, facing forward
-                new Pose2d(3.5, 0, new Rotation2d(0))),
+                new Pose2d(3, 0, new Rotation2d(0))),
                 // Pass config
-                getConfig(0, 1)); 
+                getConfig(0, 0)); 
 
         Trajectory turnOnTheSpotTrajectory = TrajectoryGenerator.generateTrajectory(
                 // Start at the origin facing the +X direction
@@ -173,8 +173,9 @@ public class RobotContainer {
 
         Trajectory forwardAndRightTraj = TrajectoryGenerator.generateTrajectory(
             new Pose2d(0, 0, new Rotation2d(0)),
-            List.of(new Translation2d(1.5, 0.5)),  //List.of(), // new Translation2d(1.5, 0.5)
-            new Pose2d(2.3, 0.5, Rotation2d.fromDegrees(0)),
+            //List.of(new Translation2d(1.5, 0.5)),   // new Translation2d(1.5, 0.5)
+            List.of(), 
+            new Pose2d(3, 0.75, Rotation2d.fromDegrees(0)),
             getConfig());
 
         
