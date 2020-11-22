@@ -45,12 +45,15 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 @SuppressWarnings("PMD.TooManyFields")
 public class RamseteCommandMerge extends CommandBase {
     private final Timer m_timer = new Timer();
-    private final Trajectory m_trajectory;
+    private Trajectory m_trajectory;
     private final RamseteController m_follower;
     private final SimpleMotorFeedforward m_feedforward;
     private final DifferentialDriveKinematics m_kinematics;
     private DifferentialDriveWheelSpeeds m_prevSpeeds;
+    private double m_totalTimeElapsed = 0;
+    private double m_timeBeforeTrajectory = 0;
     private double m_prevTime;
+    private boolean acceptAcceleration = true;
     private final DriveSubsystem m_driveSubsystem;
     private final double m_endEarly;
 
@@ -135,8 +138,9 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void execute() {
-        double curTime = m_timer.get();
-        double dt = curTime - m_prevTime;
+        m_totalTimeElapsed = m_timer.get();
+        double curTime = m_totalTimeElapsed - m_timeBeforeTrajectory;
+        double dt = m_totalTimeElapsed - m_prevTime;
 
         Pose2d CURRENTPOSE = m_driveSubsystem.getPose();
         Trajectory.State DESIREDSTATE = m_trajectory.sample(curTime);
@@ -156,10 +160,11 @@ public class RamseteCommandMerge extends CommandBase {
         double leftFeedforward;
         double rightFeedforward;
 
+
         double leftAcceleration = (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt;
         double rightAcceleration = (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt;
 
-        boolean acceptAcceleration = true;
+        
         if (acceptAcceleration) {
             leftFeedforward =
                     m_feedforward.calculate(leftSpeedSetpoint, leftAcceleration);
@@ -193,4 +198,24 @@ public class RamseteCommandMerge extends CommandBase {
     public boolean isFinished() {
         return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds()); //  * m_endEarly
     }
+
+    public double getTotalTime() {
+        return m_trajectory.getTotalTimeSeconds();
+    }
+
+    public double getTotalTimeElapsed() {
+        return m_totalTimeElapsed;
+    }
+
+    public Trajectory.State getFutureState(double timeInFuture) {
+        return m_trajectory.sample(m_totalTimeElapsed - m_timeBeforeTrajectory + timeInFuture);
+    }
+
+    public void setNewTrajectory(Trajectory newTrajectory) {
+        m_trajectory = newTrajectory;
+        m_timeBeforeTrajectory = m_timer.get();
+    }
+    
+
+
 }
