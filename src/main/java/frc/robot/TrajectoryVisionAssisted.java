@@ -6,6 +6,7 @@ import java.util.List;
 
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
@@ -18,14 +19,12 @@ public class TrajectoryVisionAssisted extends CommandBase {
     boolean hasStartTrajectory;
     boolean isFollowingTrajectory = false;
     double m_startAtTimeElapsed;
-    Pose2d m_endPose;
-    boolean hasEndPose;
+    Translation2d m_endTranslation;
     int m_robotCycleSinceGeneration = 0;
     TrajectoryConfig m_trajectoryConfig;
-    TrajectoryVisionConstraint m_trajectoryVisionConstraint;
 
-    final int CYCLES_PER_GENERATION = 10;  // Put into config or constructor (maybe both)
-    final double FUTURE_POSE_TIME = 0.2;  // Put into config
+    final int CYCLES_PER_GENERATION = 6;  // Put into config or constructor (maybe both) or make it a function of velocity
+    final double FUTURE_POSE_TIME = 0.022;  // Put into config
     final double END_BEFORE_RAMSETE_TIME = 0.1;  // Put into config
 
     RamseteCommandMerge m_ramseteCommand;
@@ -36,18 +35,22 @@ public class TrajectoryVisionAssisted extends CommandBase {
      * Trajectory objects to the ramsete command to give it new paths based on data from vision.
      * 
      * This constructor takes a starting trajectory and will follow it but will constantly check 
-     * with vision if vision has a better end pose or heading. The constraints can constrain when 
-     * to look for vision for a new trajectory.
+     * with vision if vision has a better end pose or heading. But it will only start those checks 
+     * once a given amount of time has passed. Put 0 to instantly start the checks.
      * 
      * @param visionType 1: UpperGoal-Pose  2: Ball-Heading
-     * @param trajectory Starting trajectory to follow
+     * @param startAfterTimeElasped Will only check vision for data after given time has elasped.
+     * @param startingTrajectory Starting trajectory to follow.
      */
     public TrajectoryVisionAssisted(int visionType, double startAfterTimeElasped, Trajectory startingTrajectory) {
         m_visionType = visionType;
         m_startAtTimeElapsed = startAfterTimeElasped;
         m_startTrajectory = startingTrajectory;
         hasStartTrajectory = true;
-        hasEndPose = false;
+        
+        if (visionType == 2) {
+            m_endTranslation = startingTrajectory.sample(startingTrajectory.getTotalTimeSeconds()).poseMeters.getTranslation();
+        }
 
     }
 
@@ -61,19 +64,10 @@ public class TrajectoryVisionAssisted extends CommandBase {
      * 
      * @param visionType 1: UpperGoal-Pose  2: Ball-Heading
      */
-    public TrajectoryVisionAssisted(int visionType, double startAfterTimeElasped, TrajectoryVisionConstraint constraint) {
+    public TrajectoryVisionAssisted(int visionType) {
         m_visionType = visionType;
-        m_startAtTimeElapsed = startAfterTimeElasped;
+        m_startAtTimeElapsed = 0;
         hasStartTrajectory = false;
-        hasEndPose = false;
-    }
-
-    public TrajectoryVisionAssisted(int visionType, double startAfterTimeElasped, Pose2d endPose) {
-        m_visionType = visionType;
-        m_startAtTimeElapsed = startAfterTimeElasped;
-        m_endPose = endPose;
-        hasEndPose = true;
-        hasStartTrajectory = true;
     }
 
     @Override
@@ -92,6 +86,8 @@ public class TrajectoryVisionAssisted extends CommandBase {
         if (isFollowingTrajectory == false) {
 
             // The logic here could change to better match the senario/vision code/pose math
+
+
             Pose2d targetPose = getTargetPose(1);
 
             // Check if vision data should be used. (if not(-99))
@@ -104,11 +100,7 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
             
         } else {
-            Pose2d currentPose = m_driveSubsystem.getPose();
             if (shouldGenerateTrajectory()) {
-                // Pose2d targetPose = getPoseFromVision();
-                // Trajectory.State futureState = m_ramseteCommand.getFutureState(FUTURE_POSE_TIME);
-                // Trajectory trajectory = generateTrajectory(futureState, targetPose);
                 m_ramseteCommand.setNewTrajectory(generateTrajectoryUsingVision());
                 m_robotCycleSinceGeneration = 0;
                 isFollowingTrajectory = true;
@@ -141,7 +133,7 @@ public class TrajectoryVisionAssisted extends CommandBase {
             // Vision on ball for heading
             case 2:
                 Rotation2d heading = new Rotation2d(); // <-- get heading from vision
-                return generateTrajectory(futureState, new Pose2d(m_endPose.getTranslation(), heading));
+                return generateTrajectory(futureState, new Pose2d(m_endTranslation, heading));
         }
 
         return m_startTrajectory;
