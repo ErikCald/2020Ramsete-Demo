@@ -57,7 +57,7 @@ public class RamseteCommandMerge extends CommandBase {
     private double m_prevTime;
     private boolean acceptAcceleration = true;
     private final DriveSubsystem m_driveSubsystem;
-    private Pose2d firstTargetPose;
+    private Pose2d targetPose;
 
     private NetworkTableEntry xError, yError, rotError;
 
@@ -96,7 +96,7 @@ public class RamseteCommandMerge extends CommandBase {
         m_timer.reset();
         m_timer.start();
         m_driveSubsystem.setCoastMode();
-        firstTargetPose = m_trajectory.sample(m_trajectory.getTotalTimeSeconds()).poseMeters;
+        targetPose = m_trajectory.sample(m_trajectory.getTotalTimeSeconds()).poseMeters;
     }
 
     @Override
@@ -132,8 +132,9 @@ public class RamseteCommandMerge extends CommandBase {
             leftFeedforward = m_feedforward.calculate(leftSpeedSetpoint);
             rightFeedforward = m_feedforward.calculate(rightSpeedSetpoint);
         }
+
         m_driveSubsystem.logRamseteData(currentPose, desiredState, poseError, leftSpeedSetpoint, rightSpeedSetpoint,
-                leftFeedforward, rightFeedforward, leftAcceleration, rightAcceleration);
+                leftFeedforward, rightFeedforward, leftAcceleration, rightAcceleration, targetPose);
 
         m_driveSubsystem.tankDriveVelocities(leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward);
 
@@ -167,6 +168,7 @@ public class RamseteCommandMerge extends CommandBase {
     public void setNewTrajectory(Trajectory newTrajectory) {
         m_trajectory = newTrajectory;
         m_timeBeforeTrajectory = m_timer.get();
+        targetPose = m_trajectory.sample(m_trajectory.getTotalTimeSeconds()).poseMeters;
     }
 
 }

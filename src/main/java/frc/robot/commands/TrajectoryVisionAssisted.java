@@ -1,5 +1,5 @@
 
-package frc.robot;
+package frc.robot.commands;
 
 import java.util.List;
 
@@ -12,6 +12,7 @@ import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryGenerator;
 import edu.wpi.first.wpilibj2.command.CommandBase;
+import frc.robot.RobotContainer;
 import frc.robot.commands.RamseteCommandMerge;
 import frc.robot.subsystems.DriveSubsystem;
 
@@ -33,14 +34,13 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
     RamseteCommandMerge m_ramseteCommand;
 
-    RobotContainer m_robotContainer = new RobotContainer(); // TEMPORARY TO ALLOW ROBOT BUILD
-    DriveSubsystem m_driveSubsystem = new DriveSubsystem();
+    RobotContainer m_robotContainer;
+    DriveSubsystem m_driveSubsystem;
     Pose2d fakeVisionPose;
     double fakeVisionTimePassed;
     boolean fakeVisionUsed;
 
-    NetworkTableEntry networkTableVisionDistance;
-    NetworkTableEntry networkTableVisionAngle;
+    NetworkTableEntry entryPegArray;
 
     /**
      * TrajectoryVisionAssisted will construct a ramsete command and then
@@ -119,9 +119,9 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
         switch (m_visionType) {
         case 1:
-            var table = NetworkTableInstance.getDefault().getTable("vision");
-            networkTableVisionDistance = table.getEntry("distance");
-            networkTableVisionAngle = table.getEntry("angle");
+            var table = NetworkTableInstance.getDefault().getTable("Vision2017");
+            entryPegArray = table.getEntry("distance");
+
         }
 
     }
@@ -159,7 +159,9 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        return m_ramseteCommand.getTotalTimeElapsed() > (m_ramseteCommand.getTotalTime() - END_BEFORE_RAMSETE_TIME);
+        boolean timeElasped = m_ramseteCommand.getTotalTimeElapsed() > (m_ramseteCommand.getTotalTime() - END_BEFORE_RAMSETE_TIME);
+        boolean ramseteCommendRunning = m_ramseteCommand.isScheduled();
+        return (ramseteCommendRunning == false) || timeElasped;
     }
 
     /**
@@ -210,8 +212,11 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
         switch (visionType) {
         case 1:
-            double distanceFromTarget = networkTableVisionDistance.getDouble(0); // get from vision
-            double robotAngleToTarget = networkTableVisionAngle.getDouble(0); // get from vision
+            double[] pegArray = entryPegArray.getDoubleArray(new double[] { 0 });
+            if (pegArray.length == 1)
+                return null;
+            double distanceFromTarget = pegArray[0]; // get from vision
+            double robotAngleToTarget = pegArray[1]; // get from vision
             final double angleOfSteamworksPeg = -60;
 
             if (robotAngleToTarget == -99) {
