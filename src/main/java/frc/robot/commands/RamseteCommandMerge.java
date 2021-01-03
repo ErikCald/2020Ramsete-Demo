@@ -23,7 +23,6 @@ import frc.robot.Constants;
 
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 
-
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 
@@ -31,16 +30,19 @@ import edu.wpi.first.networktables.NetworkTableInstance;
  * This command was copied and modified from RamseteCommand on WpiLib.
  * https://github.com/wpilibsuite/allwpilib/blob/master/wpilibNewCommands/src/main/java/edu/wpi/first/wpilibj2/command/RamseteCommand.java
  * 
- * A command that uses a RAMSETE controller ({@link RamseteController}) to follow a trajectory
- * {@link Trajectory} with a differential drive.
+ * A command that uses a RAMSETE controller ({@link RamseteController}) to
+ * follow a trajectory {@link Trajectory} with a differential drive.
  *
- * <p>The command handles trajectory-following, and feedforwards internally.  This
- * is intended to be a more-or-less "complete solution" that can be used by teams without a great
- * deal of controls expertise.
+ * <p>
+ * The command handles trajectory-following, and feedforwards internally. This
+ * is intended to be a more-or-less "complete solution" that can be used by
+ * teams without a great deal of controls expertise.
  *
- * <p>Advanced teams seeking more flexibility (for example, those who wish to use the onboard
- * PID functionality of a "smart" motor controller) may use the secondary constructor that omits
- * the PID returning only the raw wheel speeds from the RAMSETE controller.
+ * <p>
+ * Advanced teams seeking more flexibility (for example, those who wish to use
+ * the onboard PID functionality of a "smart" motor controller) may use the
+ * secondary constructor that omits the PID returning only the raw wheel speeds
+ * from the RAMSETE controller.
  */
 @SuppressWarnings("PMD.TooManyFields")
 public class RamseteCommandMerge extends CommandBase {
@@ -55,16 +57,17 @@ public class RamseteCommandMerge extends CommandBase {
     private double m_prevTime;
     private boolean acceptAcceleration = true;
     private final DriveSubsystem m_driveSubsystem;
-    private final double m_endEarly;
+    private Pose2d firstTargetPose;
 
     private NetworkTableEntry xError, yError, rotError;
 
     /**
-     * Constructs a new RamseteCommand that, when executed, will follow the provided trajectory.
-     * Performs no PID control and calculates feedforwards; outputs are the raw wheel speeds
-     * from the RAMSETE controller and the feedforwards. It will follow the full trajectory
+     * Constructs a new RamseteCommand that, when executed, will follow the provided
+     * trajectory. Performs P control and calculates feedforwards; outputs are the
+     * raw wheel speeds from the RAMSETE controller and the feedforwards. It will
+     * follow the full trajectory
      *
-     * @param trajectory            The trajectory to follow.
+     * @param trajectory The trajectory to follow.
      */
     public RamseteCommandMerge(Trajectory trajectory, DriveSubsystem drivetrain) {
         m_trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
@@ -73,45 +76,11 @@ public class RamseteCommandMerge extends CommandBase {
         m_follower = new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta);
         m_kinematics = Constants.kDriveKinematics;
 
-        m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter, Constants.kaVoltSecondsSquaredPerMeter);
+        m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
+                Constants.kaVoltSecondsSquaredPerMeter);
 
-        m_endEarly = 1.0d;
+        addRequirements(drivetrain); // m_driveSubsystem
 
-        addRequirements(drivetrain);  //m_driveSubsystem
-
-        var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
-        xError = table.getEntry("xError");
-        yError = table.getEntry("yError");
-        rotError = table.getEntry("rotError");
-
-
-
-
-    }
-
-    /**
-     * Constructs a new RamseteCommand that, when executed, will follow the provided trajectory.
-     * Performs no PID control and calculates feedforwards; outputs are the raw wheel speeds
-     * from the RAMSETE controller and the feedforwards. It can end early based on parameters.
-     *
-     * @param trajectory            The trajectory to follow.
-     * @param endEarly          This double can allow the Ramsete Command to end the trajectory early. 
-     *                          The idea being that vision can calculate a new updated trajectory half way
-     *                          through which is more accurate.
-     */
-    public RamseteCommandMerge(Trajectory trajectory, double endEarly, DriveSubsystem drivetrain) {
-        m_trajectory = requireNonNullParam(trajectory, "trajectory", "RamseteCommand");
-
-        m_driveSubsystem = drivetrain;  // DriveSubsystem.getInstance();
-        m_follower = new RamseteController(Constants.kRamseteB, Constants.kRamseteZeta);
-        m_kinematics = Constants.kDriveKinematics;
-
-        m_feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter, Constants.kaVoltSecondsSquaredPerMeter);
-
-        m_endEarly = endEarly;
-        
-        addRequirements(m_driveSubsystem);
-        
         var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
         xError = table.getEntry("xError");
         yError = table.getEntry("yError");
@@ -120,20 +89,14 @@ public class RamseteCommandMerge extends CommandBase {
 
     @Override
     public void initialize() {
-        // System.out.println("RamseteCommandMerge Initializing");
-        // System.out.println(m_trajectory.toString());
-
-        // -*- System.out.println("Current Pose: " + m_driveSubsystem.getPose().toString());
-
         m_prevTime = 0;
         var initialState = m_trajectory.sample(0);
-        m_prevSpeeds = m_kinematics.toWheelSpeeds(
-                new ChassisSpeeds(initialState.velocityMetersPerSecond,
-                        0,
-                        initialState.curvatureRadPerMeter
-                                * initialState.velocityMetersPerSecond));
+        m_prevSpeeds = m_kinematics.toWheelSpeeds(new ChassisSpeeds(initialState.velocityMetersPerSecond, 0,
+                initialState.curvatureRadPerMeter * initialState.velocityMetersPerSecond));
         m_timer.reset();
         m_timer.start();
+        m_driveSubsystem.setCoastMode();
+        firstTargetPose = m_trajectory.sample(m_trajectory.getTotalTimeSeconds()).poseMeters;
     }
 
     @Override
@@ -142,61 +105,51 @@ public class RamseteCommandMerge extends CommandBase {
         double curTime = m_totalTimeElapsed - m_timeBeforeTrajectory;
         double dt = m_totalTimeElapsed - m_prevTime;
 
-        Pose2d CURRENTPOSE = m_driveSubsystem.getPose();
-        Trajectory.State DESIREDSTATE = m_trajectory.sample(curTime);
-        Pose2d poseError = DESIREDSTATE.poseMeters.relativeTo(CURRENTPOSE);
+        Pose2d currentPose = m_driveSubsystem.getPose();
+        Trajectory.State desiredState = m_trajectory.sample(curTime);
+
+        // Network Table stuff
+        Pose2d poseError = desiredState.poseMeters.relativeTo(currentPose);
         xError.setNumber(poseError.getTranslation().getX());
         yError.setNumber(poseError.getTranslation().getY());
         rotError.setNumber(poseError.getRotation().getDegrees());
 
-
-        var targetWheelSpeeds = m_kinematics.toWheelSpeeds(
-                m_follower.calculate(CURRENTPOSE, DESIREDSTATE));
+        var targetWheelSpeeds = m_kinematics.toWheelSpeeds(m_follower.calculate(currentPose, desiredState));
 
         var leftSpeedSetpoint = targetWheelSpeeds.leftMetersPerSecond;
         var rightSpeedSetpoint = targetWheelSpeeds.rightMetersPerSecond;
 
-
         double leftFeedforward;
         double rightFeedforward;
-
-
         double leftAcceleration = (leftSpeedSetpoint - m_prevSpeeds.leftMetersPerSecond) / dt;
         double rightAcceleration = (rightSpeedSetpoint - m_prevSpeeds.rightMetersPerSecond) / dt;
 
-        
         if (acceptAcceleration) {
-            leftFeedforward =
-                    m_feedforward.calculate(leftSpeedSetpoint, leftAcceleration);
-            rightFeedforward =
-                m_feedforward.calculate(rightSpeedSetpoint,
-                        rightAcceleration);
+            leftFeedforward = m_feedforward.calculate(leftSpeedSetpoint, leftAcceleration);
+            rightFeedforward = m_feedforward.calculate(rightSpeedSetpoint, rightAcceleration);
 
         } else {
             leftFeedforward = m_feedforward.calculate(leftSpeedSetpoint);
             rightFeedforward = m_feedforward.calculate(rightSpeedSetpoint);
         }
-        m_driveSubsystem.logRamseteData(CURRENTPOSE, DESIREDSTATE, poseError, 
-                    leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward,
-                    leftAcceleration, rightAcceleration);
+        m_driveSubsystem.logRamseteData(currentPose, desiredState, poseError, leftSpeedSetpoint, rightSpeedSetpoint,
+                leftFeedforward, rightFeedforward, leftAcceleration, rightAcceleration);
 
         m_driveSubsystem.tankDriveVelocities(leftSpeedSetpoint, rightSpeedSetpoint, leftFeedforward, rightFeedforward);
 
-        m_prevTime = curTime;
+        m_prevTime = m_totalTimeElapsed;
         m_prevSpeeds = targetWheelSpeeds;
     }
 
     @Override
     public void end(boolean interrupted) {
-        // System.out.println("RamseteCommandMerge has ended, time of " + m_timer.get());
         m_driveSubsystem.stopLogging();
         m_timer.stop();
-        // System.out.println(m_driveSubsystem.getPose().toString());
     }
 
     @Override
     public boolean isFinished() {
-        return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds()); //  * m_endEarly
+        return m_timer.hasElapsed(m_trajectory.getTotalTimeSeconds() + m_timeBeforeTrajectory);
     }
 
     public double getTotalTime() {
@@ -215,7 +168,5 @@ public class RamseteCommandMerge extends CommandBase {
         m_trajectory = newTrajectory;
         m_timeBeforeTrajectory = m_timer.get();
     }
-    
-
 
 }

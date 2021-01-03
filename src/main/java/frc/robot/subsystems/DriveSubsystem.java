@@ -6,6 +6,7 @@
 /*----------------------------------------------------------------------------*/
 
 package frc.robot.subsystems;
+
 import frc.robot.Constants;
 import frc.robot.SimpleCsvLogger;
 
@@ -14,7 +15,6 @@ import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.kinematics.DifferentialDriveOdometry;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-import com.ctre.phoenix.motorcontrol.TalonSRXFeedbackDevice;
 import com.ctre.phoenix.motorcontrol.FeedbackDevice;
 import com.ctre.phoenix.motorcontrol.NeutralMode;
 import com.ctre.phoenix.motorcontrol.can.WPI_TalonSRX;
@@ -28,11 +28,8 @@ import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.controller.SimpleMotorFeedforward;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 
-import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
-
-
 
 public class DriveSubsystem extends SubsystemBase {
 
@@ -40,14 +37,14 @@ public class DriveSubsystem extends SubsystemBase {
     private DifferentialDrive m_drive;
 
     // Motor Controllers specific to this drivebase subsystem
-    private WPI_TalonSRX leftMaster, rightMaster;    //, climberTalon; // Pigeon may be connected to the climber talon
+    private WPI_TalonSRX leftMaster, rightMaster; // , climberTalon; // Pigeon may be connected to the climber talon
     private WPI_TalonSRX leftSlave, rightSlave;
     private final int kPIDLoopIdx = 0;
     private final int kTimeoutMs = 1000;
 
-    // Duplicate of SimpleMotorFeedforward meant to be used for testing 
+    // Duplicate of SimpleMotorFeedforward meant to be used for testing
     SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(Constants.ksVolts, Constants.kvVoltSecondsPerMeter,
-                Constants.kaVoltSecondsSquaredPerMeter);
+            Constants.kaVoltSecondsSquaredPerMeter);
 
     // Odometry class for tracking robot pose
     private final DifferentialDriveOdometry m_odometry;
@@ -60,11 +57,10 @@ public class DriveSubsystem extends SubsystemBase {
     // DriveSubsystem is a singleton class as it represents a physical subsystem
     private static DriveSubsystem currentInstance;
 
-    
-    //Network Tables
-    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement,
-                leftDelta, rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion,
-                leftFeedforwardVolts, rightFeedforwardVolts;
+    // Network Tables
+    NetworkTableEntry m_xEntry, m_yEntry, leftReference, leftMeasurement, rightReference, rightMeasurement, leftDelta,
+            rightDelta, leftVoltage, rightVoltage, busVoltage, leftPosistion, rightPosistion, leftFeedforwardVolts,
+            rightFeedforwardVolts;
 
     // Create logger instance
     SimpleCsvLogger logger;
@@ -80,13 +76,13 @@ public class DriveSubsystem extends SubsystemBase {
         rightSlave = new WPI_TalonSRX(Constants.RIGHT_REAR_MOTOR);
         followMotors();
 
-        // Talon settings and methods for velocity control copied frc2706-2020-FeederSubsystem:
+        // Talon settings and methods for velocity control copied
+        // frc2706-2020-FeederSubsystem:
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/FeederSubsystem.java
         leftMaster.configFactoryDefault();
         rightMaster.configFactoryDefault();
         leftSlave.configFactoryDefault();
         rightSlave.configFactoryDefault();
-
 
         // leftMaster.setInverted(true);
         // leftSlave.setInverted(true);
@@ -104,7 +100,10 @@ public class DriveSubsystem extends SubsystemBase {
         leftMaster.config_kP(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_P, kTimeoutMs);
         leftMaster.config_kI(kPIDLoopIdx, 0, kTimeoutMs);
         leftMaster.config_kD(kPIDLoopIdx, Constants.LEFT_DRIVE_PID_D, kTimeoutMs);
-        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);   // FeederSubsystem had this commented out .configAllowableClosedloopError(0, 0, kTimeoutMs);
+        leftMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT); // FeederSubsystem had this
+                                                                                       // commented out
+                                                                                       // .configAllowableClosedloopError(0,
+                                                                                       // 0, kTimeoutMs);
         leftMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
         rightMaster.config_kF(kPIDLoopIdx, Constants.RIGHT_DRIVE_PID_F, kTimeoutMs);
@@ -114,21 +113,21 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.configAllowableClosedloopError(0, 50, Constants.CAN_TIMEOUT_SHORT);
         rightMaster.setSelectedSensorPosition(0, 0, Constants.CAN_TIMEOUT_SHORT);
 
-        // Voltage Compensation will account for the drop in battery voltage as the match goes on.
+        // Voltage Compensation will account for the drop in battery voltage as the
+        // match goes on.
         // leftMaster.enableVoltageCompensation(true);
         // rightMaster.enableVoltageCompensation(true);
 
-        //m_drive = new DifferentialDrive(leftMaster, rightMaster);
+        // m_drive = new DifferentialDrive(leftMaster, rightMaster);
 
         // All Pigeon setup and methods copied from frc2706-2020-DriveBase2020
         // https://github.com/FRC2706/2020-2706-Robot-Code/blob/master/src/main/java/frc/robot/subsystems/DriveBase2020.java
-        pigeon = new PigeonIMU(leftSlave);   //new WPI_TalonSRX(Constants.PIGEON_ID)
+        pigeon = new PigeonIMU(leftSlave); // new WPI_TalonSRX(Constants.PIGEON_ID)
         pigeon.setFusedHeading(0d, Constants.CAN_TIMEOUT_LONG);
         fusionStatus = new PigeonIMU.FusionStatus();
 
         zeroEncoders();
         m_odometry = new DifferentialDriveOdometry(Rotation2d.fromDegrees(getCurrentHeading()));
-
 
         var table = NetworkTableInstance.getDefault().getTable("troubleshooting");
         m_xEntry = table.getEntry("X");
@@ -153,23 +152,22 @@ public class DriveSubsystem extends SubsystemBase {
         rightFeedforwardVolts = table.getEntry("rightFeedforwardVolts");
 
         logger = new SimpleCsvLogger();
-        logger.init(new String[]{
-            "TrajectoryTime", "stateX", "stateY", "stateRot", 
-            "stateVel", "stateAccel", "stateCurv", 
-            "currentX", "currentY", "currentRot",
-            "errorX", "errorY", "errorRot",
-            "cmdLeftVel", "cmdRightVel", "measLeftVel", "measRightVel",
-            "leftFF", "rightFF", "leftMotorOutput", "rightMotorOutput",
-            "leftSetpointAccel", "rightSetpointAccel" 
-                    }, new String[]{
-            "s", "m", "m", "deg",
-            "m/s", "m/s/s", "rad/s",
-            "m", "m", "deg",
-            "m", "m", "deg",
-            "m/s", "m/s", "m/s", "m/s",
-            "%", "%", "volts", "volts",
-            "m/s/s", "m/s/s"
-            });
+        logger.init(new String[] { "TrajectoryTime", "stateX", "stateY", "stateRot", //
+                "stateVel", "stateAccel", "stateCurv", //
+                "currentX", "currentY", "currentRot", //
+                "errorX", "errorY", "errorRot", //
+                "cmdLeftVel", "cmdRightVel", "measLeftVel", "measRightVel", //
+                "leftFF", "rightFF", "leftMotorOutput", "rightMotorOutput", //
+                "leftSetpointAccel", "rightSetpointAccel", //
+                "targetX", "targetY", "targetRot" },
+                new String[] { "s", "m", "m", "deg", //
+                        "m/s", "m/s/s", "rad/s", //
+                        "m", "m", "deg", //
+                        "m", "m", "deg", //
+                        "m/s", "m/s", "m/s", "m/s", //
+                        "%", "%", "volts", "volts", //
+                        "m/s/s", "m/s/s", //
+                        "m", "m", "deg" });
     }
 
     /**
@@ -203,11 +201,12 @@ public class DriveSubsystem extends SubsystemBase {
         rightVoltage.setNumber(rightMaster.getMotorOutputVoltage());
         busVoltage.setNumber(leftMaster.getBusVoltage());
         // System.out.println("get current pose: " + getPose().toString());
-        
+
     }
 
     /**
-     * Determine current pose (x, y and orientation) using heading and encoder distances.
+     * Determine current pose (x, y and orientation) using heading and encoder
+     * distances.
      */
     public void updateOdometry() {
         m_odometry.update(Rotation2d.fromDegrees(getCurrentHeading()), getLeftEncoderPosistion(),
@@ -217,12 +216,15 @@ public class DriveSubsystem extends SubsystemBase {
         m_xEntry.setNumber(translation.getX());
         m_yEntry.setNumber(translation.getY());
 
-       //System.out.printf("------Left/Right Encoder: %d  /  %d,   Left/Right Side in Meters: %.4f  /  %.4f   \n", leftMaster.getSelectedSensorPosition(), rightMaster.getSelectedSensorPosition(), getLeftEncoderPosistion(), getRightEncoderPosistion()); //getPose().toString()
+        // System.out.printf("------Left/Right Encoder: %d / %d, Left/Right Side in
+        // Meters: %.4f / %.4f \n", leftMaster.getSelectedSensorPosition(),
+        // rightMaster.getSelectedSensorPosition(), getLeftEncoderPosistion(),
+        // getRightEncoderPosistion()); //getPose().toString()
     }
 
     /**
-     * Returns the currently-estimated pose of the robot.
-     * REQUIRED FOR RAMSETE COMMAND
+     * Returns the currently-estimated pose of the robot. REQUIRED FOR RAMSETE
+     * COMMAND
      * 
      * @return The pose.
      */
@@ -233,20 +235,21 @@ public class DriveSubsystem extends SubsystemBase {
     /**
      * Get the posistion of the left encoder
      * 
-     * @return Encoder posistion value 
+     * @return Encoder posistion value
      */
     private double getLeftEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(leftMaster.getSelectedSensorPosition());
         leftPosistion.setNumber(encoderTicks);
         return talonPosistionToMeters(encoderTicks);
 
-        // return -(leftMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        // return -(leftMaster.getSelectedSensorPosition() / 4096.0d) *
+        // (0.1524*Math.PI);
     }
 
     /**
      * Get the posistion of the right encoder
      * 
-     * @return Encoder posistion value 
+     * @return Encoder posistion value
      */
     private double getRightEncoderPosistion() {
         double encoderTicks = filterEncoderPosData(rightMaster.getSelectedSensorPosition());
@@ -255,22 +258,50 @@ public class DriveSubsystem extends SubsystemBase {
     }
 
     /**
-     * Filter Encoder posisiton data 
+     * get the velocity of the left encoder
+     * 
+     * @return Velocity of the left encoder in meters per second
+     */
+    private double getLeftVelocity() {
+        return talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity());
+    }
+
+    /**
+     * get the velocity of the right encoder
+     * 
+     * @return Velocity of the left encoder in meters per second
+     */
+    private double getRightVelocity() {
+        return talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity());
+    }
+
+    /**
+     * Get average speeds of the drivetrain
+     * 
+     * @return The average speed in meters per second
+     */
+    public double getAverageSpeeds() {
+        return (getLeftVelocity() + getRightVelocity()) / 2;
+    }
+
+    /**
+     * Filter Encoder posisiton data
      * 
      * @return Filtered Encoder posisiton data
      */
     private double filterEncoderPosData(double encoderData) {
-        return encoderData * 1.0;//1.0341d;
+        return encoderData * 1.0;// 1.0341d;
     }
 
     /**
      * Returns true if the pigeon has been defined
+     * 
      * @return True if the pigeon is defined, false otherwise
      */
     public final boolean hasPigeon() {
         return pigeon != null;
     }
-    
+
     /**
      * Tries to get the current angle as reported by the pigeon
      * 
@@ -301,7 +332,7 @@ public class DriveSubsystem extends SubsystemBase {
      */
     public void arcadeDrive(double fwd, double rot) {
         // -*- System.out.println("------------ARCADE DRIVE");
-        //^*m_drive.arcadeDrive(fwd, rot);
+        // ^*m_drive.arcadeDrive(fwd, rot);
     }
 
     public void setControlMode() {
@@ -326,47 +357,46 @@ public class DriveSubsystem extends SubsystemBase {
      *
      * REQUIRED FOR RAMSETE COMMAND
      * 
-     * @param leftVelocity the commanded left output
+     * @param leftVelocity  the commanded left output
      * @param rightVelocity the commanded right output
      */
-    public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward, double rightFeedforward) {
-        leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity), DemandType.ArbitraryFeedForward,
-                leftFeedforward / 12.0);
-        rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity), DemandType.ArbitraryFeedForward,
-                rightFeedforward / 12.0);
-        
+    public void tankDriveVelocities(double leftVelocity, double rightVelocity, double leftFeedforward,
+            double rightFeedforward) {
+        leftMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(leftVelocity),
+                DemandType.ArbitraryFeedForward, leftFeedforward / 12.0);
+        rightMaster.set(ControlMode.Velocity, metersPerSecondToTalonVelocity(rightVelocity),
+                DemandType.ArbitraryFeedForward, rightFeedforward / 12.0);
+
         double leftMeasuredVelocity = (talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity()));
         double rightMeasuredVelocity = (talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity()));
 
         leftMeasurement.setNumber(leftMeasuredVelocity);
         leftReference.setNumber(leftVelocity);
-        leftDelta.setNumber(leftVelocity-leftMeasuredVelocity);
+        leftDelta.setNumber(leftVelocity - leftMeasuredVelocity);
         leftFeedforwardVolts.setNumber(leftFeedforward);
 
         rightMeasurement.setNumber(rightMeasuredVelocity);
         rightReference.setNumber(rightVelocity);
-        rightDelta.setNumber(rightVelocity-rightMeasuredVelocity);
+        rightDelta.setNumber(rightVelocity - rightMeasuredVelocity);
         rightFeedforwardVolts.setNumber(rightFeedforward);
 
         /**
          * The code example is from this post:
          * https://www.chiefdelphi.com/t/falcon-500-closed-loop-velocity/378170/18
          * 
-         * Super helpful example code to include the simpleMotorForward
-         * falconMotor.set(
-         * ControlMode.Velocity,
-         * velocityMetresPerSecond * kRotationsPerMetre * 2048 * 0.1,
-         * DemandType.ArbitraryFeedForward,
-         * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0
-         * );
+         * Super helpful example code to include the simpleMotorForward falconMotor.set(
+         * ControlMode.Velocity, velocityMetresPerSecond * kRotationsPerMetre * 2048 *
+         * 0.1, DemandType.ArbitraryFeedForward,
+         * simpleMotorForward.calculate(velocityMetresPerSecond) / 12.0 );
          * 
          */
     }
+
     /**
      * Controls the left and right side of the drivetrain in meters per second
      * 
-     * This parameter set is less accurate and calculates feedforward values assuming your acceleration is 0.
-     * Purpose is to use this for testing.
+     * This parameter set is less accurate and calculates feedforward values
+     * assuming your acceleration is 0. Purpose is to use this for testing.
      * 
      * @param leftVelocity
      * @param rightVelocity
@@ -376,7 +406,6 @@ public class DriveSubsystem extends SubsystemBase {
         double rightFF = feedforward.calculate(rightVelocity);
 
         tankDriveVelocities(leftVelocity, rightVelocity, leftFF, rightFF);
-
 
     }
 
@@ -400,8 +429,6 @@ public class DriveSubsystem extends SubsystemBase {
         pigeon.setYaw(0, Constants.CAN_TIMEOUT_SHORT);
     }
 
-
-
     /**
      * Converting m/s to talon ticks/100ms
      * 
@@ -409,10 +436,11 @@ public class DriveSubsystem extends SubsystemBase {
      */
     private double metersPerSecondToTalonVelocity(double metersPerSecond) {
         // double result = metersPerSecond;
-        // double circumference = Math.PI * (0.1524);    // Pi*Diameter
-        // double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
-        // result = result * ticksPerMeter;   // Meters Per Second * ticks per 1 meter
-        // result = result * 0.1;    // Converting ticks per second to ticks per 100ms
+        // double circumference = Math.PI * (0.1524); // Pi*Diameter
+        // double ticksPerMeter = 4096/circumference; // Ticks per revolution /
+        // circumference
+        // result = result * ticksPerMeter; // Meters Per Second * ticks per 1 meter
+        // result = result * 0.1; // Converting ticks per second to ticks per 100ms
 
         // return result;
 
@@ -433,17 +461,17 @@ public class DriveSubsystem extends SubsystemBase {
         // double metersPerTick = circumference/4096;
         // result = result * metersPerTick;
         // return result;
-    
+
         return talonPosistionToMeters(talonVelocity * 10); // Convert ticks/100ms to ticks/sec
     }
-    
+
     /**
      * Converting Talon ticks to m/s
      * 
      * Unit Conversion Method
      */
     private double talonPosistionToMeters(double talonPosisiton) {
-       // (rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
+        // (rightMaster.getSelectedSensorPosition() / 4096.0d) * (0.1524*Math.PI);
 
         double result = talonPosisiton;
         double circumference = Math.PI * 0.1524;
@@ -455,12 +483,11 @@ public class DriveSubsystem extends SubsystemBase {
 
     private double metersToTalonPosistion(double meters) {
         double result = meters;
-        double circumference = Math.PI * (0.1524);    // Pi*Diameter
-        double ticksPerMeter = 4096/circumference;    // Ticks per revolution / circumference
-        result = result * ticksPerMeter;   // Meter * ticks per 1 meter
+        double circumference = Math.PI * (0.1524); // Pi*Diameter
+        double ticksPerMeter = 4096 / circumference; // Ticks per revolution / circumference
+        result = result * ticksPerMeter; // Meter * ticks per 1 meter
         return result;
     }
-
 
     /**
      * Set FPD values
@@ -477,15 +504,14 @@ public class DriveSubsystem extends SubsystemBase {
         rightMaster.config_kD(kPIDLoopIdx, kD, kTimeoutMs);
     }
 
-
     /**
      * Simple CSV Logger
      * 
      * Getting log data from Ramsete Command Merge
      */
-    public void logRamseteData(Pose2d currentPose, Trajectory.State currentState, Pose2d poseError,
-                double leftVelocity, double rightVelocity, double leftFF, double rightFF, 
-                double leftAccel, double rightAccel) {
+    public void logRamseteData(Pose2d currentPose, Trajectory.State currentState, Pose2d poseError, double leftVelocity,
+            double rightVelocity, double leftFF, double rightFF, double leftAccel, double rightAccel,
+            Pose2d targetPose) {
 
         double leftMeasuredVelocity = talonVelocityToMetersPerSecond(leftMaster.getSelectedSensorVelocity());
         double rightMeasuredVelocity = talonVelocityToMetersPerSecond(rightMaster.getSelectedSensorVelocity());
@@ -494,21 +520,22 @@ public class DriveSubsystem extends SubsystemBase {
         Translation2d stateXY = statePose.getTranslation();
         Translation2d currentXY = currentPose.getTranslation();
         Translation2d errorXY = poseError.getTranslation();
+        Translation2d targetXY = targetPose.getTranslation();
 
         double leftMotor = leftMaster.getMotorOutputVoltage();
         double rightMotor = rightMaster.getMotorOutputVoltage();
 
-        logger.writeData(
-            currentState.timeSeconds, stateXY.getX(), stateXY.getY(), statePose.getRotation().getDegrees(),
-            currentState.velocityMetersPerSecond, currentState.accelerationMetersPerSecondSq, currentState.curvatureRadPerMeter,
-            currentXY.getX(), currentXY.getY(), currentPose.getRotation().getDegrees(),
-            errorXY.getX(), errorXY.getY(), poseError.getRotation().getDegrees(),
-            leftVelocity, rightVelocity, leftMeasuredVelocity, rightMeasuredVelocity,
-            leftFF, rightFF, leftMotor, rightMotor, leftAccel, rightAccel);
+        logger.writeData(currentState.timeSeconds, stateXY.getX(), stateXY.getY(), statePose.getRotation().getDegrees(), //
+                currentState.velocityMetersPerSecond, currentState.accelerationMetersPerSecondSq,
+                currentState.curvatureRadPerMeter, //
+                currentXY.getX(), currentXY.getY(), currentPose.getRotation().getDegrees(), //
+                errorXY.getX(), errorXY.getY(), poseError.getRotation().getDegrees(), //
+                leftVelocity, rightVelocity, leftMeasuredVelocity, rightMeasuredVelocity, //
+                leftFF, rightFF, leftMotor, rightMotor, leftAccel, rightAccel, //
+                targetXY.getX(), targetXY.getY(), targetPose.getRotation().getDegrees());
     }
 
     public void stopLogging() {
         logger.close();
     }
 }
-

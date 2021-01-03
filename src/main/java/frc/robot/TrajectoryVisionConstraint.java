@@ -76,6 +76,7 @@ public class TrajectoryVisionConstraint {
                 } else {
                     if (translation.getX() < 0) return false;
                 }
+            }
 
             // Check if y hasn't past desired ref and return false
             if (checkY) {
