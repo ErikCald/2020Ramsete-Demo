@@ -7,6 +7,7 @@ import edu.wpi.first.networktables.NetworkTableEntry;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.geometry.Pose2d;
 import edu.wpi.first.wpilibj.geometry.Rotation2d;
+import edu.wpi.first.wpilibj.geometry.Transform2d;
 import edu.wpi.first.wpilibj.geometry.Translation2d;
 import edu.wpi.first.wpilibj.trajectory.Trajectory;
 import edu.wpi.first.wpilibj.trajectory.TrajectoryConfig;
@@ -159,7 +160,11 @@ public class TrajectoryVisionAssisted extends CommandBase {
 
     @Override
     public boolean isFinished() {
-        boolean timeElasped = m_ramseteCommand.getTotalTimeElapsed() > (m_ramseteCommand.getTotalTime() - END_BEFORE_RAMSETE_TIME);
+        if (isFollowingTrajectory == false)
+            return false;
+
+        boolean timeElasped = m_ramseteCommand
+                .getTotalTimeElapsed() > (m_ramseteCommand.getTotalTime() - END_BEFORE_RAMSETE_TIME);
         boolean ramseteCommendRunning = m_ramseteCommand.isScheduled();
         return (ramseteCommendRunning == false) || timeElasped;
     }
@@ -228,16 +233,12 @@ public class TrajectoryVisionAssisted extends CommandBase {
                 break;
             }
 
+            Rotation2d angle = Rotation2d.fromDegrees(robotAngleToTarget);
             // Adjacent = Hypotenuse * cosAngle
-            x = distanceFromTarget * Math.cos(Math.abs(robotAngleToTarget));
+            x = distanceFromTarget * Math.cos(robotAngleToTarget);
 
             // Opposite = Hypotenuse * sinAngle
-            y = distanceFromTarget * Math.cos(Math.abs(robotAngleToTarget));
-
-            // Correct the absolute value
-            if (robotAngleToTarget < 0) {
-                y *= -1;
-            }
+            y = distanceFromTarget * Math.sin(robotAngleToTarget);
 
             targetPose = new Pose2d(x, y, Rotation2d.fromDegrees(angleOfSteamworksPeg));
             break;
@@ -257,7 +258,10 @@ public class TrajectoryVisionAssisted extends CommandBase {
         }
         prevTargetPose = targetPose;
 
-        return targetPose;
+        Transform2d transformToFieldCoordinateSystem = new Transform2d(new Pose2d(), targetPose);
+        Pose2d transformedTargetPose = m_driveSubsystem.getPose().transformBy(transformToFieldCoordinateSystem);
+
+        return transformedTargetPose;
     }
 
     private boolean shouldGenerateTrajectory() {
